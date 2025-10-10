@@ -1,12 +1,12 @@
    "version": 2,
    "builds": [
          {
-            "src": "api/sendToBrevo.js",
+            "src": "express-js-on-vercel/api/sendToBrevo.js",
             "use": "@vercel/node"
          }
     ],
     "installCommand": "pnpm install --no-frozen-lockfile",
     "routes": [
-        { "src": "/(.*)", "dest": "api/sendToBrevo.js" }
+        { "src": "/(.*)", "dest": "express-js-on-vercel/api/sendToBrevo.js" }
     ]
 }
