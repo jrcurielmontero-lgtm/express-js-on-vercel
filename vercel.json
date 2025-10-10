@@ -8,6 +8,6 @@
     ],
     "installCommand": "pnpm install --no-frozen-lockfile",
     "routes": [
-        { "src":"/(.*", "dest": "sever.js" }
+        { "src":"/(.*", "dest": "sendToBrevo.js" }
     ]
 }
