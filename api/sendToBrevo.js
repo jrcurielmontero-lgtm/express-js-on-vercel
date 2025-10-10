@@ -1,7 +1,7 @@
 // api/sendToBrevo.js
 export default async function handler(req, res) {
   // Permitir CORS para tu dominio
-res.setHeader("Access-Control-Allow-Origin", *); // tu dominio
+res.setHeader("Access-Control-Allow-Origin", "*"); // tu dominio
 res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
 
