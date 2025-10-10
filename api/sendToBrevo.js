@@ -2,12 +2,12 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  // --- Habilitar CORS ---
+  // --- Permitir CORS desde tu dominio ---
   res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
 
-  // Responder preflight request OPTIONS
+  // Responder preflight
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
