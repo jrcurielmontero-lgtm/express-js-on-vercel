@@ -40,7 +40,8 @@ export default async function handler(req, res) {
           TELEFONO: data.TELEFONO,
           TIPO_ENTIDAD: data.TIPO_ENTIDAD,
           ESPECIALIDAD: data.ESPECIALIDAD,
-          USO_RRSS: data.USO_RRSS
+          USO_RRSS: data.USO_RRSS,
+          OBJETIVO: data.OBJETIVO
         },
         updateEnabled: true
       })
