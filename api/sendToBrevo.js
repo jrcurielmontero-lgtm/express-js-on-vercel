@@ -1,12 +1,11 @@
-// api/sendToBrevo.js
 export default async function handler(req, res) {
-  // Permitir CORS para tu dominio
-res.setHeader("Access-Control-Allow-Origin", "*"); // tu dominio
-res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
+  // CORS para tu dominio o "*" temporalmente
+  const allowedOrigin = "https://psicoboost.es"; // o "*" para probar
+  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
 
-
-  // Manejar preflight
+  // Preflight OPTIONS
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -27,7 +26,7 @@ res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
         "api-key": apiKey
       },
       body: JSON.stringify({
-        email: data.email,
+        email: data.EMAIL,
         attributes: {
           NOMBRE: data.NOMBRE,
           APELLIDOS: data.APELLIDOS,
