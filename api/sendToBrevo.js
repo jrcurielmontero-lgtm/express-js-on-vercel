@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   // Permitir CORS
-  res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es"); // tu dominio
+  res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es/?page_id=38"); // tu dominio
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
 
