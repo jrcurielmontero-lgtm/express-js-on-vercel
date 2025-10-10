@@ -1,11 +1,9 @@
 export default async function handler(req, res) {
-  // CORS para tu dominio o "*" temporalmente
-  const allowedOrigin = "https://psicoboost.es"; // o "*" para probar
-  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  // Manejo de CORS
+  res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
 
-  // Preflight OPTIONS
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -13,6 +11,14 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+
+  // ------------------- Depuración -------------------
+  try {
+    console.log("Data recibida:", req.body);  // <- aquí
+  } catch (e) {
+    console.error("Error parsing body:", e);  // <- aquí
+  }
+  // -------------------------------------------------
 
   const apiKey = process.env.BREVO_API_KEY;
   const data = req.body;
@@ -26,7 +32,7 @@ export default async function handler(req, res) {
         "api-key": apiKey
       },
       body: JSON.stringify({
-        email: data.EMAIL,
+        email: data.email,
         attributes: {
           NOMBRE: data.NOMBRE,
           APELLIDOS: data.APELLIDOS,
