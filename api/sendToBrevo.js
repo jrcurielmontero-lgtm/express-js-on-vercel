@@ -1,21 +1,24 @@
-// Sin necesidad de node-fetch, usando fetch nativo de Node.js 18+
+// api/sendToBrevo.js
 export default async function handler(req, res) {
-  // Permitir CORS para tu dominio
+  // --- Configurar CORS ---
   res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
 
-  // Preflight
-  if (req.method === "OPTIONS") return res.status(200).end();
+  // Manejar preflight
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-  const data = req.body;
   const apiKey = process.env.BREVO_API_KEY;
+  const data = req.body;
 
   try {
-    console.log("Datos recibidos:", data);
-
+    // Usando fetch nativo
     const response = await fetch("https://api.brevo.com/v3/contacts", {
       method: "POST",
       headers: {
@@ -24,7 +27,7 @@ export default async function handler(req, res) {
         "api-key": apiKey
       },
       body: JSON.stringify({
-        email: data.EMAIL,
+        email: data.EMAIL || data.email,
         attributes: {
           NOMBRE: data.NOMBRE,
           APELLIDOS: data.APELLIDOS,
