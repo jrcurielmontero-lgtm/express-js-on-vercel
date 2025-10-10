@@ -1,29 +1,17 @@
 {
-  "name": "express",
-  "version": "1.0.0",
-  "description": "Basic Express.js + Vercel example that serves html content, JSON data and simulates an api route.",
-  "type": "module",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@types/express": "^5.0.0",
-    "express": "^4.18.2",
-    "node-fetch": "^3.3.2"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0"
-  },
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jrcurielmontero-lgtm/express-js-on-vercel.git"
-  },
-  "bugs": {
-    "url": "https://github.com/jrcurielmontero-lgtm/express-js-on-vercel/issues"
-  },
-  "homepage": "https://github.com/jrcurielmontero-lgtm/express-js-on-vercel#readme"
+    "name":"express-js-on-vercel",
+    "version": "1.0.0",
+    "description": "Servidor Express desplegado en Vercel para integraciones externas",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "dev": "vercel dev",
+        "start": "node index.js"
+    },
+    "author": "J.R. Curiel Montero",
+    "license": "MIT",
+    "dependencies": {
+        "express": "^4.19.2",
+        "cors": "^2.8.5"
+     }
 }
