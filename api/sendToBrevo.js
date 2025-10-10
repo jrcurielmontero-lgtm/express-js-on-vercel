@@ -1,6 +1,6 @@
 // api/sendToBrevo.js
 export default async function handler(req, res) {
-  // --- Configurar CORS ---
+  // --- CORS ---
   res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
@@ -18,7 +18,6 @@ export default async function handler(req, res) {
   const data = req.body;
 
   try {
-    // Usando fetch nativo
     const response = await fetch("https://api.brevo.com/v3/contacts", {
       method: "POST",
       headers: {
@@ -27,7 +26,7 @@ export default async function handler(req, res) {
         "api-key": apiKey
       },
       body: JSON.stringify({
-        email: data.EMAIL || data.email,
+        email: data.EMAIL,
         attributes: {
           NOMBRE: data.NOMBRE,
           APELLIDOS: data.APELLIDOS,
