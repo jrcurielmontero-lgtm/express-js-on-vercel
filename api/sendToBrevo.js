@@ -12,7 +12,6 @@ export default async function handler(req, res) {
   }
 
   // resto del código...
-}
 
 
 // api/sendToBrevo.js
@@ -53,4 +52,6 @@ export default async function handler(req, res) {
     console.error("Error al enviar a Brevo:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
+}
+  
 }
