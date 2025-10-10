@@ -2,12 +2,12 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  // Habilitar CORS para tu dominio
+  // --- Habilitar CORS ---
   res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
 
-  // Responder a preflight request
+  // Responder preflight request OPTIONS
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -43,9 +43,10 @@ export default async function handler(req, res) {
     });
 
     const result = await response.json();
-    res.status(response.status).json(result);
+    return res.status(response.status).json(result);
+
   } catch (error) {
     console.error("Error al enviar a Brevo:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    return res.status(500).json({ error: "Error interno del servidor" });
   }
 }
