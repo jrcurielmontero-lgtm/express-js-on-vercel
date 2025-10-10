@@ -1,9 +1,15 @@
 // api/sendToBrevo.js
 export default async function handler(req, res) {
+  const ALLOWED_ORIGIN = "https://psicoboost.es";
+
   // --- CORS ---
-  res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
+  const setCorsHeaders = () => {
+    res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
+  };
+
+  setCorsHeaders();
 
   // Manejar preflight
   if (req.method === "OPTIONS") {
@@ -41,9 +47,14 @@ export default async function handler(req, res) {
     });
 
     const result = await response.json();
+
+    // Siempre setear CORS antes de responder
+    setCorsHeaders();
     res.status(response.status).json(result);
+
   } catch (error) {
     console.error("Error al enviar a Brevo:", error);
+    setCorsHeaders();
     res.status(500).json({ error: "Error interno del servidor" });
   }
 }
