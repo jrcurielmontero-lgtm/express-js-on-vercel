@@ -2,13 +2,13 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  // Permitir CORS solo desde tu dominio
+  // --- Configurar CORS ---
   res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
+  // Responder al preflight
   if (req.method === "OPTIONS") {
-    // Responder preflight
     return res.status(200).end();
   }
 
@@ -18,6 +18,10 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.BREVO_API_KEY;
   const data = req.body;
+
+  if (!data || !data.email) {
+    return res.status(400).json({ error: "Email requerido" });
+  }
 
   try {
     const response = await fetch("https://api.brevo.com/v3/contacts", {
@@ -30,22 +34,23 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         email: data.email,
         attributes: {
-          NOMBRE: data.NOMBRE,
-          APELLIDOS: data.APELLIDOS,
-          TELEFONO: data.TELEFONO,
-          TIPO_ENTIDAD: data.TIPO_ENTIDAD,
-          ESPECIALIDAD: data.ESPECIALIDAD,
-          USO_RRSS: data.USO_RRSS,
-          OBJETIVO: data.OBJETIVO
+          NOMBRE: data.NOMBRE || "",
+          APELLIDOS: data.APELLIDOS || "",
+          TELEFONO: data.TELEFONO || "",
+          TIPO_ENTIDAD: data.TIPO_ENTIDAD || "",
+          ESPECIALIDAD: data.ESPECIALIDAD || [],
+          USO_RRSS: data.USO_RRSS || [],
+          OBJETIVO: data.OBJETIVO || ""
         },
         updateEnabled: true
       })
     });
 
     const result = await response.json();
-    res.status(response.status).json(result);
+    return res.status(response.status).json(result);
+
   } catch (error) {
     console.error("Error al enviar a Brevo:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    return res.status(500).json({ error: "Error interno del servidor" });
   }
 }
