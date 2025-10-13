@@ -1,9 +1,10 @@
 export default async function handler(req, res) {
-  // Permitir CORS desde tu dominio
+  // Permitir solicitudes desde tu dominio
   res.setHeader('Access-Control-Allow-Origin', 'https://psicoboost.es');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Responder preflight OPTIONS
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -16,8 +17,7 @@ export default async function handler(req, res) {
     const data = req.body;
     console.log('Petición recibida:', data);
 
-    // Aquí podrías integrar Brevo más adelante
-    // Por ahora solo devolvemos lo recibido
+    // Aquí integras Brevo
     return res.status(200).json({ message: 'OK', data });
   } catch (err) {
     console.error(err);
