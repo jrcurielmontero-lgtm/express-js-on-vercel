@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   const ALLOWED_ORIGIN = "https://psicoboost.es";
 
   // --- Headers CORS ---
-  res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
