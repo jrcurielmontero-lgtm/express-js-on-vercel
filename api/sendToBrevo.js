@@ -1,11 +1,14 @@
 // api/sendToBrevo.js
 export default async function handler(req, res) {
+  console.log("🌐 Request origin:", req.headers.origin);
+  console.log("📬 Headers:", req.headers);
+
   const ALLOWED_ORIGIN = "https://psicoboost.es";
 
   // --- CORS headers para todas las respuestas ---
   res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, api-key");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   // --- Preflight request ---
   if (req.method === "OPTIONS") {
