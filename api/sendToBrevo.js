@@ -2,24 +2,29 @@
 export default async function handler(req, res) {
   const ALLOWED_ORIGIN = "https://psicoboost.es";
 
-  // Headers CORS para todas las respuestas
-  res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  const setCors = () => {
+    res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  };
 
-  // Responder a la preflight request
+  setCors();
+
   if (req.method === "OPTIONS") {
+    // Devuelve headers CORS aunque sea OPTIONS
     return res.status(204).end();
   }
 
-  // Solo POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const data = req.body;
-
-  // TEST mínimo: no toca Brevo todavía
-  console.log("Datos recibidos:", data);
-  return res.status(200).json({ message: "Endpoint funciona correctamente", received: data });
+  try {
+    // Aquí solo testeo recepción
+    console.log("Datos recibidos:", req.body);
+    return res.status(200).json({ message: "Endpoint funciona correctamente", received: req.body });
+  } catch (error) {
+    setCors(); // Headers CORS también en error
+    return res.status(500).json({ error: "Error interno" });
+  }
 }
