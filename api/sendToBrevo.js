@@ -1,4 +1,6 @@
 export default async function handler(req, res) {
+    console.log("✅ Petición recibida:", req.method, req.body);
+
   // --- CORS setup ---
   res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
