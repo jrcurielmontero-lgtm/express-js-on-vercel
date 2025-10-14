@@ -20,8 +20,7 @@ export default async function handler(req, res) {
     const payload = {
       email: EMAIL,
       attributes: {
-        NOMBRE,
-        APELLIDOS
+        NOMBRE
       },
       listIds: [2] // tu lista Brevo
     };
