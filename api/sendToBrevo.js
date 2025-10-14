@@ -1,22 +1,29 @@
-const fetch = require('node-fetch'); // o axios si lo usas
+export default async function handler(req, res) {
+  // --- CONFIGURACIÓN DE CORS ---
+  res.setHeader('Access-Control-Allow-Origin', 'https://psicoboost.es');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24h cache preflight
 
-module.exports = async (req, res) => {
-  // (Opcional) volver a asegurarnos de los headers por si cae aquí de otra ruta
-  const ALLOWED = 'https://psicoboost.es';
-  if (req.headers.origin === ALLOWED) res.setHeader('Access-Control-Allow-Origin', ALLOWED);
+  // --- RESPUESTA AL PREFLIGHT (OPTIONS) ---
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+  // --- SOLO ACEPTAMOS POST ---
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido' });
+  }
 
   try {
-    const data = req.body || {};
-    console.log('Petición recibida en sendToBrevo:', data);
+    console.log("✅ Petición recibida:", req.body);
 
-    // aquí integras a Brevo (ejemplo mínimo comentado)
-    // const brevoRes = await fetch('https://api.brevo.com/v3/contacts', { ... });
+    // Aquí iría tu lógica de envío a Brevo
+    // const response = await fetch('https://api.brevo.com/v3/smtp/email', { ... });
 
-    return res.status(200).json({ ok: true, received: data });
-  } catch (err) {
-    console.error('Error interno:', err);
-    return res.status(500).json({ error: 'Error interno' });
+    return res.status(200).json({ message: 'Correo enviado correctamente' });
+  } catch (error) {
+    console.error("❌ Error al enviar:", error);
+    return res.status(500).json({ error: 'Error al enviar el correo' });
   }
-};
+}
