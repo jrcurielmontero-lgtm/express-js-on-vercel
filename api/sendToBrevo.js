@@ -2,9 +2,10 @@ import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   // --- CABECERAS CORS COMUNES ---
-  res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es"); // Cambia por tu dominio
+  res.setHeader("Access-Control-Allow-Origin", "*"); // permite cualquier dominio
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+
 
   console.log("Petición recibida:", req.method, req.body);
 
