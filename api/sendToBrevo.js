@@ -12,8 +12,11 @@ export default async function handler(req, res) {
   const { NOMBRE, APELLIDOS, EMAIL} = req.body;
   const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
-  if (!EMAIL || !NOMBRE) {
-    return res.status(400).json({ error: "Faltan campos obligatorios: EMAIL o NOMBRE" });
+  if (!EMAIL ) {
+    return res.status(400).json({ error: "Faltan campos obligatorios: EMAIL" });
+  }
+  if ( !NOMBRE) {
+    return res.status(400).json({ error: "Faltan campos obligatorios:  NOMBRE" });
   }
 
   try {
