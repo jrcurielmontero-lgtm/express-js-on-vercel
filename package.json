@@ -1,17 +1,18 @@
 {
-    "name":"express-js-on-vercel",
-    "version": "1.0.0",
-    "description": "Servidor Express desplegado en Vercel para integraciones externas",
-    "main": "index.js",
-    "type": "module",
-    "scripts": {
-        "dev": "vercel dev",
-        "start": "node index.js"
-    },
-    "author": "J.R. Curiel Montero",
-    "license": "MIT",
-    "dependencies": {
-        "express": "^4.19.2",
-        "cors": "^2.8.5"
-     }
+  "name": "express-js-on-vercel",
+  "version": "1.0.0",
+  "description": "Servidor Express desplegado en Vercel para integraciones externas",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node index.js"
+  },
+  "author": "J.R. Curiel Montero",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^3.3.2"
+  }
 }
