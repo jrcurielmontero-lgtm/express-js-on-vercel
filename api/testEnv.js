@@ -1,4 +1,13 @@
 // /api/testEnv.js
+export default function handler(req, res) {
+  // Permitir solo tu dominio o todos con '*'
+  res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).end(); // Responder preflight
+  }
 import express from "express";
 const router = express.Router();
 
