@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
 
-  const { NOMBRE, APELLIDOS, EMAIL, TELEFONO } = req.body;
+  const { NOMBRE, APELLIDOS, EMAIL} = req.body;
   const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
   if (!EMAIL || !NOMBRE) {
@@ -21,8 +21,7 @@ export default async function handler(req, res) {
       email: EMAIL,
       attributes: {
         NOMBRE,
-        APELLIDOS,
-        TELEFONO
+        APELLIDOS
       },
       listIds: [2] // tu lista Brevo
     };
