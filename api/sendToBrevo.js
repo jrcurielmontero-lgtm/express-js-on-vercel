@@ -1,29 +1,30 @@
-export default async function handler(req, res) {
-  // --- CONFIGURACIÓN DE CORS ---
-  res.setHeader('Access-Control-Allow-Origin', 'https://psicoboost.es');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Max-Age', '86400'); // 24h cache preflight
+import cors from 'cors';
+import express from 'express';
+import fetch from 'node-fetch';
 
-  // --- RESPUESTA AL PREFLIGHT (OPTIONS) ---
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+const app = express();
+app.use(cors({ origin: 'https://psicoboost.es' }));
+app.use(express.json());
+
+app.options('/api/sendToBrevo', cors()); // Preflight
+
+app.post('/api/sendToBrevo', async (req, res) => {
+  console.log("✅ Petición recibida: POST", req.body);
+
+  const { nombre, email } = req.body;
+
+  if (!nombre || !email) {
+    return res.status(400).send("Faltan campos requeridos");
   }
 
-  // --- SOLO ACEPTAMOS POST ---
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
-  }
-
+  // Aquí iría el envío real a Brevo, pero ahora haremos una simulación
   try {
-    console.log("✅ Petición recibida:", req.body);
-
-    // Aquí iría tu lógica de envío a Brevo
-    // const response = await fetch('https://api.brevo.com/v3/smtp/email', { ... });
-
-    return res.status(200).json({ message: 'Correo enviado correctamente' });
-  } catch (error) {
-    console.error("❌ Error al enviar:", error);
-    return res.status(500).json({ error: 'Error al enviar el correo' });
+    console.log(`📤 Simulando envío a Brevo de ${nombre} <${email}>`);
+    res.status(200).send(`Contacto recibido: ${nombre} (${email})`);
+  } catch (err) {
+    console.error("❌ Error al enviar:", err);
+    res.status(500).send("Error al enviar a Brevo");
   }
-}
+});
+
+export default app;
