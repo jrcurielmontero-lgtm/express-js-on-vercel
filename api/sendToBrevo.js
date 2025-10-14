@@ -1,50 +1,47 @@
+import fetch from "node-fetch";
+
 export default async function handler(req, res) {
-    console.log("✅ Petición recibida:", req.method, req.body);
+  console.log("✅ Petición recibida:", req.method, req.body);
 
-  // --- CORS setup ---
-  res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  // --- OPTIONS preflight ---
   if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
 
-  // --- Solo permitir POST ---
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  try {
-    const { email, name, phone } = req.body;
+  const { nombre, email } = req.body;
+  const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
-    // 🔥 Aquí va tu lógica de Brevo
+  console.log("🔑 API Key length:", BREVO_API_KEY ? BREVO_API_KEY.length : "undefined");
+  console.log("🔑 API Key preview:", BREVO_API_KEY ? BREVO_API_KEY.slice(0, 5) + "..." : "NO_KEY");
+
+  try {
     const response = await fetch("https://api.brevo.com/v3/contacts", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "api-key": process.env.BREVO_API_KEY,
+        "accept": "application/json",
+        "content-type": "application/json",
+        "api-key": BREVO_API_KEY
       },
       body: JSON.stringify({
         email,
-        attributes: { FIRSTNAME: name, PHONE: phone },
-        updateEnabled: true,
-      }),
+        attributes: { NOMBRE: nombre },
+        listIds: [2]
+      })
     });
 
-    const data = await response.json();
+    const brevoResponse = await response.json();
+    console.log("📬 Respuesta de Brevo:", brevoResponse);
 
-    // --- Responder SIEMPRE con headers CORS ---
     res.status(200).json({
       message: "Contacto enviado correctamente a Brevo",
-      brevoResponse: data,
+      brevoResponse
     });
+
   } catch (error) {
-    console.error("Error en sendToBrevo:", error);
-    // --- Importante: devolver CORS incluso en errores ---
-    res
-      .status(500)
-      .json({ error: "Error al procesar la solicitud", details: error.message });
+    console.error("🔥 Error en sendToBrevo:", error);
+    res.status(500).json({ error: "Error interno en el servidor", details: error.message });
   }
 }
