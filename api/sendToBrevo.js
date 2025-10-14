@@ -1,26 +1,22 @@
-export default async function handler(req, res) {
-  // Permitir solicitudes desde tu dominio
-  res.setHeader('Access-Control-Allow-Origin', 'https://psicoboost.es');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+const fetch = require('node-fetch'); // o axios si lo usas
 
-  // Responder preflight OPTIONS
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+module.exports = async (req, res) => {
+  // (Opcional) volver a asegurarnos de los headers por si cae aquí de otra ruta
+  const ALLOWED = 'https://psicoboost.es';
+  if (req.headers.origin === ALLOWED) res.setHeader('Access-Control-Allow-Origin', ALLOWED);
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
   try {
-    const data = req.body;
-    console.log('Petición recibida:', data);
+    const data = req.body || {};
+    console.log('Petición recibida en sendToBrevo:', data);
 
-    // Aquí integras Brevo
-    return res.status(200).json({ message: 'OK', data });
+    // aquí integras a Brevo (ejemplo mínimo comentado)
+    // const brevoRes = await fetch('https://api.brevo.com/v3/contacts', { ... });
+
+    return res.status(200).json({ ok: true, received: data });
   } catch (err) {
-    console.error(err);
+    console.error('Error interno:', err);
     return res.status(500).json({ error: 'Error interno' });
   }
-}
+};
