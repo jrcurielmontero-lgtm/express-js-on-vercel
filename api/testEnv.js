@@ -1,6 +1,5 @@
 // /api/testEnv.js
-export default function handler(req, res) {
-  // Permitir solo tu dominio o todos con '*'
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "https://psicoboost.es");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
