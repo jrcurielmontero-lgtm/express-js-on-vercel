@@ -29,7 +29,19 @@ export default async function handler(req, res) {
         "content-type": "application/json",
         "api-key": BREVO_API_KEY
       },
-      body: JSON.stringify({ email, attributes: { NOMBRE: nombre }, listIds: [2] })
+      body: JSON.stringify({
+        email,
+        attributes: {
+          NOMBRE: nombre,
+          TELEFONO: telefono,
+          EMPRESA: empresa,
+          CARGO: cargo,
+          CIUDAD: ciudad,
+          PAIS: pais,
+          MENSAJE: mensaje
+        },
+        listIds: [2],
+      })
     });
 
     const brevoResponse = await response.json();
