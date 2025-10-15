@@ -1,12 +1,11 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  // --- CORS ---
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
-
   if (req.method === "OPTIONS") {
+    // CORS preflight
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
     return res.status(204).end();
   }
 
@@ -20,20 +19,23 @@ export default async function handler(req, res) {
     EMAIL,
     TELEFONO,
     TIPO_ENTIDAD,
-    ESPECIALIDAD,
-    USO_RRSS,
+    ESPECIALIDAD = [],
+    USO_RRSS = [],
     OBJETIVO
   } = req.body;
 
   const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
   if (!NOMBRE || !EMAIL) {
-    return res.status(400).json({ error: "Faltan campos obligatorios: NOMBRE y EMAIL" });
+    return res.status(400).json({ error: "Faltan campos obligatorios: NOMBRE o EMAIL" });
   }
 
-  // Convierte arrays a formato ['Opción1'|'Opción2']
-  const formatMultiple = (arr) =>
-    Array.isArray(arr) ? `[${arr.map(item => `'${item}'`).join('|')}]` : arr || "";
+  // --- Convertir arrays a formato Brevo ['Valor1'|'Valor2'] ---
+  const formatMultiple = (arr) => {
+    if (!Array.isArray(arr) || arr.length === 0) return "";
+    const escaped = arr.map(v => `'${v}'`); // poner comillas simples a cada valor
+    return `[${escaped.join("|")}]`;
+  };
 
   const atributos = {
     NOMBRE,
@@ -45,15 +47,9 @@ export default async function handler(req, res) {
     USO_RRSS: formatMultiple(USO_RRSS)
   };
 
-  const payload = {
-    email: EMAIL,
-    attributes: atributos,
-    listIds: [2] // Ajusta tu lista de Brevo
-  };
-
-  console.log("📬 Payload a Brevo:", payload);
-
   try {
+    console.log("📬 Payload a Brevo:", { email: EMAIL, attributes: atributos, listIds: [2] });
+
     const response = await fetch("https://api.brevo.com/v3/contacts", {
       method: "POST",
       headers: {
@@ -61,7 +57,11 @@ export default async function handler(req, res) {
         "content-type": "application/json",
         "api-key": BREVO_API_KEY
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        email: EMAIL,
+        attributes: atributos,
+        listIds: [2]
+      })
     });
 
     const brevoResponse = await response.json();
