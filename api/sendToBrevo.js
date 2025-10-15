@@ -20,7 +20,7 @@ export default async function handler(req, res) {
       NOMBRE, APELLIDOS, TELEFONO, TIPO_ENTIDAD, OBJETIVO,
       ESPECIALIDAD, USO_RRSS
     },
-    listIds: [2]
+    listIds: [3]
   };
 
   console.log("📬 Payload a Brevo:", payload);
