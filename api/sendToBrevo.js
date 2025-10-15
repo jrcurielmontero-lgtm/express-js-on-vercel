@@ -17,19 +17,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const payload = {
-      email: EMAIL,
-      attributes: {
-        NOMBRE,
-        APELLIDOS,
-        TELEFONO,
-        TIPO_ENTIDAD,
-        ESPECIALIDAD: Array.isArray(ESPECIALIDAD) ? ESPECIALIDAD.join(", ") : ESPECIALIDAD,
-        USO_RRSS: Array.isArray(USO_RRSS) ? USO_RRSS.join(", ") : USO_RRSS,
-        OBJETIVO
-      },
-      listIds: [2] // tu lista de Brevo
-    };
+const payload = {
+  email,
+  attributes: {
+    NOMBRE: nombre,
+    APELLIDOS: apellidos,
+    TELEFONO: telefono,
+    TIPO_ENTIDAD: tipoEntidad,
+    ESPECIALIDAD: especialidad, // <-- array
+    USO_RRSS: usoRrss,           // <-- array
+    OBJETIVO: objetivo
+  },
+  listIds: [3]
+};
 
     console.log("📬 Payload a Brevo:", payload);
 
