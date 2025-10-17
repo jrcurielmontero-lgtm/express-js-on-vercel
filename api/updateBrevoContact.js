@@ -1,55 +1,50 @@
 import fetch from "node-fetch";
 
-export const config = {
-  api: { bodyParser: { sizeLimit: "5mb" } } // permite logo base64
-};
-
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
 
   try {
-    const {
-      EMAIL,
-      NOMBRE,
-      APELLIDOS,
-      TIPO_ENTIDAD,
-      NUM_COLEGIADO,
-      NIF,
-      CIF,
-      CCAA,
-      CP,
-      DIRECCION,
-      RAZON_SOCIAL,
-      CUENTAS_RRSS,
-      LOGO_BASE64
-    } = req.body;
+    const body = req.body;
+    if (!body.EMAIL) return res.status(400).json({ error: "Email obligatorio" });
 
-    if (!EMAIL) return res.status(400).json({ error: "Falta el email" });
-
+    // Atributos Brevo
     const atributos = {
-      NOMBRE,
-      APELLIDOS,
-      TIPO_ENTIDAD,
-      NUM_COLEGIADO,
-      NIF,
-      CIF,
-      CCAA,
-      CP,
-      DIRECCION,
-      RAZON_SOCIAL,
-      CUENTAS_RRSS: Array.isArray(CUENTAS_RRSS) ? CUENTAS_RRSS.join(", ") : CUENTAS_RRSS || "",
-      LOGO_BASE64: LOGO_BASE64 || ""
+      TIPO_ENTIDAD: body.TIPO_ENTIDAD,
+      NIF: body.NIF || "",
+      CIF: body.CIF || "",
+      NUM_COLEGIADO: body.NUM_COLEGIADO || "",
+      CCAA: body.CCAA || "",
+      CODIGO_POSTAL: body.CP || "",
+      DIRECCION_FISCAL: body.DIRECCION || "",
+      RAZON_SOCIAL: body.RAZON_SOCIAL || "",
+      NOMBRE_NEGOCIO: body.NOMBRE_NEGOCIO || "",
+      WEB: body.WEB || "",
+      NIVEL_DIGITAL: body.NIVEL_DIGITAL || "",
+      PLAN_INTERES: body.PLAN_INTERES || "",
+      OBJETIVO_DETALLADO: body.OBJETIVO_DETALLADO || "",
+      COMPLETADO_T2: true
     };
 
-    const payload = { attributes: atributos, emailBlacklisted: false };
+    // Añadir cuentas de RRSS si existen
+    Object.keys(body).forEach(k => {
+      if (k.startsWith("CUENTA_")) atributos[k] = body[k];
+    });
 
-    const response = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(EMAIL)}`, {
-      method: "PUT",
+    // Subir logo si se incluye
+    if (body.LOGO_BASE64) atributos.LOGO_URL = body.LOGO_BASE64;
+
+    const payload = {
+      attributes: atributos,
+      email: body.EMAIL,
+      updateEnabled: true
+    };
+
+    const response = await fetch(`https://api.brevo.com/v3/contacts`, {
+      method: "POST",
       headers: {
         "accept": "application/json",
         "content-type": "application/json",
@@ -58,15 +53,11 @@ export default async function handler(req, res) {
       body: JSON.stringify(payload)
     });
 
-    const brevoResponse = await response.json();
-    console.log("🧾 Actualización Brevo:", brevoResponse);
-
-    if (response.status >= 400)
-      return res.status(response.status).json({ error: "Error al actualizar", details: brevoResponse });
-
-    res.status(200).json({ message: "Contacto actualizado correctamente", brevoResponse });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Error Brevo");
+    res.status(200).json({ message: "Contacto actualizado en Brevo", data });
   } catch (err) {
-    console.error("🔥 Error interno:", err);
-    res.status(500).json({ error: "Error interno del servidor", details: err.message });
+    console.error("Error:", err);
+    res.status(500).json({ error: err.message });
   }
 }
