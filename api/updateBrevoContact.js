@@ -27,6 +27,7 @@ export default async function handler(req, res) {
 
     if (!EMAIL) return res.status(400).json({ error: "Falta el email" });
 
+    // Construir atributos a enviar a Brevo
     const atributos = {
       TIPO_ENTIDAD,
       NUM_COLEGIADO,
@@ -43,18 +44,31 @@ export default async function handler(req, res) {
       ...rrss
     };
 
-    const response = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(EMAIL)}`, {
-      method: "PUT",
+    const payload = { email: EMAIL, attributes: atributos, updateEnabled: true };
+
+    // Enviar petición a Brevo
+    const response = await fetch("https://api.brevo.com/v3/contacts", {
+      method: "POST",
       headers: {
         "accept": "application/json",
         "content-type": "application/json",
         "api-key": process.env.BREVO_API_KEY
       },
-      body: JSON.stringify({ attributes: atributos, email: EMAIL })
+      body: JSON.stringify(payload)
     });
 
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message || "Error en Brevo");
+    // Manejo robusto de respuesta Brevo
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      result = { raw: await response.text() };
+    }
+
+    if (!response.ok) {
+      console.error("Brevo error response:", result);
+      return res.status(response.status).json({ error: "Error en Brevo", details: result });
+    }
 
     return res.status(200).json({ message: "Contacto actualizado", result });
 
