@@ -12,16 +12,16 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
 
-  const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
-  const now = Date.now();
+ // const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
+ // const now = Date.now();
 
   // 🔒 Bloqueo: 24 horas = 86.400.000 ms
-  if (recentIPs.has(ip) && now - recentIPs.get(ip) < 86400000) {
-    return res.status(429).json({ error: "Ya se envió un formulario desde esta IP en las últimas 24h" });
-  }
+  //if (recentIPs.has(ip) && now - recentIPs.get(ip) < 86400000) {
+  //  return res.status(429).json({ error: "Ya se envió un formulario desde esta IP en las últimas 24h" });
+ // }
 
   // Guardamos la IP
-  recentIPs.set(ip, now);
+ // recentIPs.set(ip, now);
 
   try {
     const { NOMBRE, APELLIDOS, EMAIL, TELEFONO, TIPO_ENTIDAD, ESPECIALIDAD, USO_RRSS, OBJETIVO } = req.body;
