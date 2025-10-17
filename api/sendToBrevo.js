@@ -26,9 +26,9 @@ export default async function handler(req, res) {
   try {
     const { NOMBRE, APELLIDOS, EMAIL, TELEFONO, TIPO_ENTIDAD, ESPECIALIDAD, USO_RRSS, OBJETIVO } = req.body;
 
-    if (!NOMBRE || !EMAIL) {
-      return res.status(400).json({ error: "Campos obligatorios faltantes" });
-    }
+  //  if (!NOMBRE || !EMAIL) {
+  //    return res.status(400).json({ error: "Campos obligatorios faltantes" });
+//}
 
     // 🧠 Convertimos los checkboxes en texto separados por comas (para Brevo tipo texto)
     const atributos = {
