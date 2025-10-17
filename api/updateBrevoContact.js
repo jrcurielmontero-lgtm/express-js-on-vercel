@@ -27,7 +27,6 @@ export default async function handler(req, res) {
 
     if (!EMAIL) return res.status(400).json({ error: "Falta el email" });
 
-    // Construir atributos a enviar a Brevo
     const atributos = {
       TIPO_ENTIDAD,
       NUM_COLEGIADO,
@@ -46,7 +45,6 @@ export default async function handler(req, res) {
 
     const payload = { email: EMAIL, attributes: atributos, updateEnabled: true };
 
-    // Enviar petición a Brevo
     const response = await fetch("https://api.brevo.com/v3/contacts", {
       method: "POST",
       headers: {
@@ -57,10 +55,10 @@ export default async function handler(req, res) {
       body: JSON.stringify(payload)
     });
 
-    // Manejo robusto de respuesta Brevo
+    // ✅ Clonar antes de intentar json() para no consumir el body
     let result;
     try {
-      result = await response.json();
+      result = await response.clone().json();
     } catch {
       result = { raw: await response.text() };
     }
