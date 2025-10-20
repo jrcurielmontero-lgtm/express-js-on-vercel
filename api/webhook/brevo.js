@@ -1,51 +1,70 @@
-
 import axios from "axios";
 import OpenAI from "openai";
 import nodemailer from "nodemailer";
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const BREVO_SMTP_PASS = process.env.BREVO_API_KEY;
-
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
+// === Webhook principal ===
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
 
   try {
-    const { event, contact } = req.body;
+    // Respuesta rápida a Brevo
+    res.status(200).json({ status: "received" });
 
-    // Verifica que el trigger corresponde al campo COMPLETADO_T2
-    if (!contact || !contact.attributes?.COMPLETADO_T2) {
-      return res.status(200).json({ status: "ignored" });
-    }
-
-    if (contact.attributes.COMPLETADO_T2 !== true) {
-      return res.status(200).json({ status: "not completed" });
-    }
-
-    const email = contact.email;
-    const leadData = await getLeadData(email);
-    const proposal = await generateProposal(leadData);
-    await sendProposalEmail(proposal, email);
-
-    return res.status(200).json({ status: "ok" });
+    // Trabajo pesado en background
+    await handleProposal(req.body);
 
   } catch (err) {
-    console.error("Error:", err.message);
-    return res.status(500).json({ error: err.message });
+    console.error("Error en handler:", err.message);
+    if (!res.headersSent) res.status(500).json({ error: err.message });
   }
 }
 
-// === Función para obtener los datos del contacto desde Brevo ===
+// === Función principal de proceso ===
+async function handleProposal(payload) {
+  try {
+    if (!payload?.contact) return console.warn("Webhook sin contacto");
+
+    const email = payload.contact.email;
+    const attrs = payload.contact.attributes || {};
+
+    // Verifica el trigger
+    if (attrs.COMPLETADO_T2 !== true) {
+      console.log(`Contacto ${email}: COMPLETADO_T2 no es true. Ignorado.`);
+      return;
+    }
+
+    console.log(`Webhook recibido correctamente de ${email}`);
+
+    // 1. Obtener todos los datos del contacto desde Brevo
+    const leadData = await getLeadData(email);
+
+    // 2. Generar propuesta comercial
+    const proposal = await generateProposal(leadData);
+
+    // 3. Enviar propuesta al gestor
+    await sendProposalEmail(proposal, email);
+
+    console.log(`Propuesta generada y enviada para ${email}`);
+
+  } catch (error) {
+    console.error("Error en handleProposal:", error.message);
+  }
+}
+
+// === Obtiene datos del contacto ===
 async function getLeadData(email) {
   const res = await axios.get(`https://api.brevo.com/v3/contacts/${email}`, {
     headers: { "api-key": BREVO_API_KEY },
+    timeout: 5000
   });
   return res.data.attributes;
 }
 
-// === Función para generar propuesta comercial con GPT ===
+// === Genera la propuesta comercial usando GPT ===
 async function generateProposal(data) {
   const services = `
 1. Gestión de RRSS (Instagram, Facebook, LinkedIn)
@@ -63,7 +82,8 @@ async function generateProposal(data) {
   `;
 
   const prompt = `
-Eres un experto en marketing digital para psicólogos. Genera una propuesta comercial personalizada para ${data.NOMBRE_NEGOCIO || "el cliente"}.
+Eres un consultor de marketing digital especializado en psicólogos. 
+Genera una propuesta comercial personalizada para ${data.NOMBRE_NEGOCIO || "el cliente"}.
 
 Datos del cliente:
 - Nombre: ${data.NOMBRE || "no especificado"}
@@ -83,32 +103,34 @@ Datos del cliente:
 Servicios disponibles:
 ${services}
 
-Estructura de salida:
-1. Introducción personalizada
-2. Diagnóstico del estado digital actual
-3. Estrategia propuesta (en 3-5 apartados)
-4. Plan de acción con tareas concretas
-5. Precio del plan (${data.PLAN_INTERES})
-6. Mensaje final que invite a agendar reunión
-Usa tono consultivo, profesional y convincente.
+Estructura del texto de salida:
+1. Introducción personalizada al psicólogo.
+2. Diagnóstico de la presencia digital actual.
+3. Estrategia recomendada basada en su especialidad y nivel digital.
+4. Plan de acción concreto (RRSS, SEO, automatizaciones, diseño).
+5. Precio asociado al plan de interés (${data.PLAN_INTERES}).
+6. Mensaje de cierre invitando a agendar una reunión de validación.
+
+Tono profesional, consultivo y cercano.
   `;
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
+    timeout: 5000
   });
 
   return completion.choices[0].message.content;
 }
 
-// === Función para enviar el correo ===
+// === Envía la propuesta por correo ===
 async function sendProposalEmail(proposal, emailLead) {
   const transporter = nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
     port: 587,
     auth: {
       user: "apikey",
-      pass: BREVO_SMTP_PASS,
+      pass: BREVO_API_KEY,
     },
   });
 
