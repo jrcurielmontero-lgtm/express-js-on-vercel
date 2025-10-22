@@ -4,11 +4,11 @@
   "builds": [
     { "src": "api/sendToBrevo.js", "use": "@vercel/node" },
     { "src": "api/updateBrevoContact.js", "use": "@vercel/node" },
-    { "src": "api/webhooks/WebhookSendProposal.js", "use": "@vercel/node" }
+    { "src": "api/webhook/WebhookSendProposal.js", "use": "@vercel/node" }
   ],
   "routes": [
     { "src": "/api/sendToBrevo", "dest": "api/sendToBrevo.js" },
     { "src": "/api/updateBrevoContact", "dest": "api/updateBrevoContact.js" },
-    { "src": "/api/webhooks/WebhookSendProposal", "dest": "api/webhooks/WebhookSendProposal.js" }
+    { "src": "/api/webhook/WebhookSendProposal", "dest": "api/webhooks/WebhookSendProposal.js" }
   ]
 }
