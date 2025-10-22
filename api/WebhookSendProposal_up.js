@@ -37,7 +37,7 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: "Eres un asistente que genera propuestas comerciales resumidas y claras para psicólogos." },
           { role: "user", content: prompt }
