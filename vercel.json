@@ -11,3 +11,4 @@
     { "src": "/api/updateBrevoContact", "dest": "api/updateBrevoContact.js" },
     { "src": "/api/webhooks/WebhookSendProposal", "dest": "api/webhooks/WebhookSendProposal.js" }
   ]
+}
