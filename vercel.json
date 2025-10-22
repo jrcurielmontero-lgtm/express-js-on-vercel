@@ -9,6 +9,6 @@
   "routes": [
     { "src": "/api/sendToBrevo", "dest": "api/sendToBrevo.js" },
     { "src": "/api/updateBrevoContact", "dest": "api/updateBrevoContact.js" },
-    { "src": "/api/webhook/WebhookSendProposal", "dest": "api/webhooks/WebhookSendProposal.js" }
+    { "src": "/api/webhook/WebhookSendProposal", "dest": "api/webhook/WebhookSendProposal.js" }
   ]
 }
