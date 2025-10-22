@@ -1,53 +1,50 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
 
   try {
-    const contact = req.body.contact;
-    if (!contact || !contact.email) {
-      return res.status(400).json({ error: "Contacto no válido" });
-    }
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const contact = body.contact;
+    if (!contact || !contact.email) return res.status(400).json({ error: "Contacto no válido" });
 
-    const apiKey = process.env.BREVO_API_KEY;
-    if (!apiKey) {
-      throw new Error("Falta la variable de entorno BREVO_API_KEY");
-    }
-
-    // 1. Obtener información del contacto desde Brevo
-    const brevoRes = await fetch(
-      `https://api.brevo.com/v3/contacts/${encodeURIComponent(contact.email)}`,
-      {
-        headers: {
-          "accept": "application/json",
-          "api-key": apiKey
-        }
-      }
-    );
-
-    if (!brevoRes.ok) {
-      const errText = await brevoRes.text();
-      throw new Error(`Error Brevo: ${errText}`);
-    }
-
-    const brevoData = await brevoRes.json();
-
-    // 2. Generar prompt (ejemplo simple)
+    // Extraer atributos de Form1/Form2
+    const attr = contact.attributes || {};
+    
     const prompt = `
-      Nombre: ${brevoData.attributes?.FIRSTNAME || "No disponible"}
-      Apellidos: ${brevoData.attributes?.LASTNAME || "No disponible"}
-      Email: ${brevoData.email}
-      Estado: ${brevoData.attributes?.COMPLETADO_T2 ? "Completado T2" : "Pendiente"}
-    `;
+Propuesta Comercial Psicoboost
+------------------------------
+Nombre: ${attr.NOMBRE || "No disponible"}
+Entidad: ${attr.TIPO_ENTIDAD || "No disponible"}
+Número Colegiado: ${attr.NUM_COLEGIADO || "No disponible"}
+NIF/CIF: ${attr.NIF || attr.CIF || "No disponible"}
+Especialidad: ${attr.ESPECIALIDAD || "No disponible"}
+CCAA: ${attr.CCAA || "No disponible"}
+Nombre negocio: ${attr.NOMBRE_NEGOCIO || "No disponible"}
+Web: ${attr.WEB || "No disponible"}
+Plan interés: ${attr.PLAN_INTERES || "No disponible"}
+Nivel digital: ${attr.NIVEL_DIGITAL || "No disponible"}
+Objetivo detallado: ${attr.OBJETIVO_DETALLADO || "No disponible"}
+RRSS:
+  Instagram: ${attr.CUENTA_INSTAGRAM || "no"}
+  Facebook: ${attr.CUENTA_FACEBOOK || "no"}
+  TikTok: ${attr.CUENTA_TIKTOK || "no"}
+  YouTube: ${attr.CUENTA_YOTUBE || "no"}
+  X: ${attr.CUENTA_X || "no"}
+Servicios incluidos:
+  - Gestión RRSS
+  - Diseño básico
+  - Operativa de marketing
+  - SEO básico
+  - Informes automáticos
+`;
 
-    // 3. Enviar correo al gestor
+    // Enviar email a gestor@psicoboost.es vía Brevo
     const emailPayload = {
       sender: { name: "Psicoboost", email: "no-reply@psicoboost.es" },
-      to: [{ email: "gestor@psicoboost.com" }],
-      subject: "Nuevo contacto procesado desde Brevo",
-      htmlContent: `<p>Información del contacto:</p><pre>${prompt}</pre>`
+      to: [{ email: "gestor@psicoboost.es" }],
+      subject: `Nueva propuesta de ${attr.NOMBRE || contact.email}`,
+      htmlContent: `<p>Se ha generado la siguiente propuesta:</p><pre>${prompt}</pre>`
     };
 
     const sendRes = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -55,20 +52,20 @@ export default async function handler(req, res) {
       headers: {
         "accept": "application/json",
         "content-type": "application/json",
-        "api-key": apiKey
+        "api-key": process.env.BREVO_API_KEY
       },
       body: JSON.stringify(emailPayload)
     });
 
     if (!sendRes.ok) {
-      const sendErr = await sendRes.text();
-      throw new Error(`Error enviando email: ${sendErr}`);
+      const errText = await sendRes.text();
+      throw new Error(`Error enviando email: ${errText}`);
     }
 
-    res.status(200).json({ ok: true, message: "Correo enviado correctamente" });
+    res.status(200).json({ ok: true, message: "Correo con prompt enviado correctamente" });
 
   } catch (err) {
-    console.error("Error en webhook:", err);
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 }
