@@ -1,46 +1,47 @@
 import fetch from "node-fetch";
-import { config } from "dotenv";
-config(); // carga variables de entorno desde .env.local en local
+import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
-  console.info("=== WebhookSendProposal_up invoked ===");
+  console.log("=== WebhookSendProposal_up invoked ===");
 
-  // Validar método POST
+  // Validación método
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido" });
+    console.log("Método no permitido:", req.method);
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   let body;
   try {
     body = req.body;
-    console.info("Raw body:", body);
+    console.log("Raw body:", body);
   } catch (err) {
-    console.error("Error parseando JSON:", err);
+    console.error("Error parseando body:", err);
     return res.status(400).json({ error: "Invalid JSON" });
   }
 
-  if (!body.contact || !body.contact.attributes) {
-    return res.status(400).json({ error: "Faltan datos de contacto" });
+  if (!body?.contact?.attributes) {
+    console.error("Faltan atributos del contacto");
+    return res.status(400).json({ error: "Missing contact attributes" });
   }
 
   const attrs = body.contact.attributes;
-  console.info("Atributos del contacto:", attrs);
+  console.log("Atributos del contacto:", attrs);
 
-  // Generar prompt/propuesta
+  // Generación de prompt
   const prompt = `
 Propuesta Comercial Psicoboost
 ------------------------------
-Nombre: ${attrs.NOMBRE}
-Entidad: ${attrs.TIPO_ENTIDAD || "no"}
-Número Colegiado: ${attrs.NUM_COLEGIADO || "no"}
-NIF/CIF: ${attrs.NIF || attrs.CIF || "no"}
-Especialidad: ${attrs.ESPECIALIDAD || "no"}
-CCAA: ${attrs.CCAA || "no"}
-Nombre negocio: ${attrs.NOMBRE_NEGOCIO || "no"}
-Web: ${attrs.WEB || "no"}
-Plan interés: ${attrs.PLAN_INTERES || "no"}
-Nivel digital: ${attrs.NIVEL_DIGITAL || "no"}
-Objetivo detallado: ${attrs.OBJETIVO_DETALLADO || "no"}
+Nombre: ${attrs.NOMBRE || "N/A"}
+Entidad: ${attrs.TIPO_ENTIDAD || "N/A"}
+Número Colegiado: ${attrs.NUM_COLEGIADO || "N/A"}
+NIF/CIF: ${attrs.NIF || "N/A"}
+Especialidad: ${attrs.ESPECIALIDAD || "N/A"}
+CCAA: ${attrs.CCAA || "N/A"}
+Nombre negocio: ${attrs.NOMBRE_NEGOCIO || "N/A"}
+Web: ${attrs.WEB || "N/A"}
+Plan interés: ${attrs.PLAN_INTERES || "N/A"}
+Nivel digital: ${attrs.NIVEL_DIGITAL || "N/A"}
+Objetivo detallado: ${attrs.OBJETIVO_DETALLADO || "N/A"}
 RRSS:
   Instagram: ${attrs.CUENTA_INSTAGRAM || "no"}
   Facebook: ${attrs.CUENTA_FACEBOOK || "no"}
@@ -54,62 +55,78 @@ Servicios incluidos:
   - SEO básico
   - Informes automáticos
 `;
-  console.info("Prompt generado:", prompt);
+  console.log("Prompt generado:\n", prompt);
 
-  // Llamada a GPT
-  let gptResponseText = "";
-  if (!process.env.OPENAI_API_KEY) {
-    console.warn("No hay API Key de OpenAI. Se usa mock de propuesta.");
-    gptResponseText = `Propuesta Comercial para ${attrs.NOMBRE}, Psicólogo Clínico:\n\nPlan ${attrs.PLAN_INTERES || "Básico"} para Potenciar tu Presencia Online y Captar Más Pacientes:\n\n- Desarrollo de Estrategia Digital Personalizada.\n- Creación de Contenidos de Calidad para Redes Sociales.\n- Optimización de Perfil en Directorios de Salud Online.\n- Asesoramiento en Publicidad Online.\n- Seguimiento de Resultados y Ajustes Constantes.\n\n¡Potencia tu presencia online y expande tu alcance!`;
-  } else {
+  // Generar propuesta GPT (si existe API Key)
+  let proposalGPT = "";
+  if (process.env.OPENAI_API_KEY) {
     try {
-      const openaiResp = await fetch("https://api.openai.com/v1/chat/completions", {
+      console.log("Invocando OpenAI...");
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
+          "Content-Type": "application/json",
           "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           model: "gpt-4",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.7
-        })
+          max_tokens: 400,
+        }),
       });
-      const openaiData = await openaiResp.json();
-      console.info("Respuesta de GPT:", openaiData);
-      gptResponseText = openaiData?.choices?.[0]?.message?.content || "[Sin respuesta de GPT]";
+
+      const data = await response.json();
+      if (data.error) {
+        console.error("Error GPT:", data.error);
+        proposalGPT = "(Error generando propuesta GPT)";
+      } else {
+        proposalGPT = data.choices?.[0]?.message?.content || "(Sin respuesta GPT)";
+      }
     } catch (err) {
-      console.error("Error GPT:", err);
-      return res.status(500).json({ error: "Error generando propuesta con GPT", details: err });
+      console.error("Excepción GPT:", err);
+      proposalGPT = "(Excepción generando propuesta GPT)";
     }
+  } else {
+    console.warn("Falta la API key de OpenAI. Se usará prompt como propuesta.");
+    proposalGPT = prompt;
   }
 
-  // Enviar correo real a Brevo
-  if (!process.env.BREVO_API_KEY) {
-    console.warn("No hay API Key de Brevo. Email simulado.");
-    return res.status(200).json({ ok: true, message: "Correo enviado correctamente (simulado)", proposal: gptResponseText });
-  }
-
+  // Enviar correo con nodemailer
   try {
-    const emailResp = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": process.env.BREVO_API_KEY,
-        "content-type": "application/json"
+    console.log("Preparando envío de correo...");
+    // Configura tu SMTP real aquí
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.example.com",
+      port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER || "user@example.com",
+        pass: process.env.SMTP_PASS || "password",
       },
-      body: JSON.stringify({
-        sender: { name: "Psicoboost", email: "no-reply@psicoboost.es" },
-        to: [{ email: "gestor@psicoboost.es" }],
-        subject: `Propuesta Comercial - ${attrs.NOMBRE}`,
-        htmlContent: `<pre>${gptResponseText}</pre>`
-      })
     });
-    const emailResult = await emailResp.json();
-    console.info("Resultado envío Brevo:", emailResult);
-    return res.status(200).json({ ok: true, message: "Correo enviado correctamente", proposal: gptResponseText, emailResult });
+
+    const mailOptions = {
+      from: `"Psicoboost" <${process.env.SMTP_USER || "user@example.com"}>`,
+      to: "gestor@psicoboost.es",
+      subject: `Propuesta Comercial - ${attrs.NOMBRE || "Cliente"}`,
+      text: proposalGPT,
+    };
+
+    // Para test: simula el envío sin fallo
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Simulando envío de correo:\n", mailOptions);
+    } else {
+      const info = await transporter.sendMail(mailOptions);
+      console.log("Correo enviado:", info.messageId);
+    }
+
+    return res.status(200).json({
+      ok: true,
+      message: "Correo enviado correctamente (simulado en dev)",
+      proposal: proposalGPT,
+    });
   } catch (err) {
-    console.error("Error enviando correo a Brevo:", err);
+    console.error("Error enviando correo:", err);
     return res.status(500).json({ error: "Error enviando correo", details: err });
   }
 }
