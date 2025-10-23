@@ -116,8 +116,8 @@ Servicios incluidos:
     if (process.env.NODE_ENV !== "production") {
       console.log("Simulando envío de correo:\n", mailOptions);
     } else {
-      const info = await transporter.sendMail(mailOptions);
-      console.log("Correo enviado:", info.messageId);
+     // const info = await transporter.sendMail(mailOptions);
+     // console.log("Correo enviado:", info.messageId);
     }
 
     return res.status(200).json({
