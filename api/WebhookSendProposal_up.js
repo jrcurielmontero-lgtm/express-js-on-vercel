@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 export default async function handler(req, res) {
   console.log("=== WebhookSendProposal_up invoked ===");
 
-  // Validación método
+  // Validación método 
   if (req.method !== "POST") {
     console.log("Método no permitido:", req.method);
     return res.status(405).json({ error: "Method Not Allowed" });
