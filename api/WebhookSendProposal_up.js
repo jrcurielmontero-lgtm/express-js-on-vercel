@@ -113,18 +113,22 @@ Servicios incluidos:
     };
 
     // Para test: simula el envío sin fallo
-    if (process.env.NODE_ENV !== "production") {
-      console.log("Simulando envío de correo:\n", mailOptions);
-    } else {
-     // const info = await transporter.sendMail(mailOptions);
-     // console.log("Correo enviado:", info.messageId);
-    }
+    if (process.env.NODE_ENV === "production") {
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Correo enviado:", info.messageId);
+      } else {
+        console.log("Simulando envío de correo (modo dev):\n", mailOptions);
+      }
+
 
     return res.status(200).json({
       ok: true,
-      message: "Correo enviado correctamente (simulado en dev)",
+      message: process.env.NODE_ENV === "production"
+        ? "Correo enviado correctamente"
+        : "Correo simulado (modo dev)",
       proposal: proposalGPT,
     });
+
   } catch (err) {
     console.error("Error enviando correo:", err);
     return res.status(500).json({ error: "Error enviando correo", details: err });
