@@ -1,10 +1,9 @@
 import fetch from "node-fetch";
-import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
-  console.log("=== WebhookSendProposal_up invoked ===");
+  console.log("=== WebhookSendProposal_up (Brevo API) ===");
 
-  // Validación método 
+  // Validar método
   if (req.method !== "POST") {
     console.log("Método no permitido:", req.method);
     return res.status(405).json({ error: "Method Not Allowed" });
@@ -13,7 +12,7 @@ export default async function handler(req, res) {
   let body;
   try {
     body = req.body;
-    console.log("Raw body:", body);
+    console.log("Raw body recibido:", body);
   } catch (err) {
     console.error("Error parseando body:", err);
     return res.status(400).json({ error: "Invalid JSON" });
@@ -27,7 +26,7 @@ export default async function handler(req, res) {
   const attrs = body.contact.attributes;
   console.log("Atributos del contacto:", attrs);
 
-  // Generación de prompt
+  // Prompt base
   const prompt = `
 Propuesta Comercial Psicoboost
 ------------------------------
@@ -48,6 +47,7 @@ RRSS:
   TikTok: ${attrs.CUENTA_TIKTOK || "no"}
   YouTube: ${attrs.CUENTA_YOTUBE || "no"}
   X: ${attrs.CUENTA_X || "no"}
+
 Servicios incluidos:
   - Gestión RRSS
   - Diseño básico
@@ -55,9 +55,10 @@ Servicios incluidos:
   - SEO básico
   - Informes automáticos
 `;
+
   console.log("Prompt generado:\n", prompt);
 
-  // Generar propuesta GPT (si existe API Key)
+  // Generar propuesta vía GPT (si hay API Key)
   let proposalGPT = "";
   if (process.env.OPENAI_API_KEY) {
     try {
@@ -91,46 +92,47 @@ Servicios incluidos:
     proposalGPT = prompt;
   }
 
-  // Enviar correo con nodemailer
+  // Envío de correo mediante Brevo API
   try {
-    console.log("Preparando envío de correo...");
-    // Configura tu SMTP real aquí
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.example.com",
-      port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER || "user@example.com",
-        pass: process.env.SMTP_PASS || "password",
-      },
-    });
+    if (!process.env.BREVO_API_KEY) {
+      throw new Error("Falta BREVO_API_KEY en variables de entorno");
+    }
 
-    const mailOptions = {
-      from: `"Psicoboost" <${process.env.SMTP_USER || "user@example.com"}>`,
-      to: "gestor@psicoboost.es",
+    console.log("Enviando correo con Brevo...");
+    const url = "https://api.brevo.com/v3/smtp/email";
+    const bodyEmail = {
+      sender: { name: "Psicoboost", email: "gestor@psicoboost.es" },
+      to: [{ email: "gestor@psicoboost.es" }],
       subject: `Propuesta Comercial - ${attrs.NOMBRE || "Cliente"}`,
-      text: proposalGPT,
+      textContent: proposalGPT,
     };
 
-    // Para test: simula el envío sin fallo
-    if (process.env.NODE_ENV === "production") {
-        const info = await transporter.sendMail(mailOptions);
-        console.log("Correo enviado:", info.messageId);
-      } else {
-        console.log("Simulando envío de correo (modo dev):\n", mailOptions);
-      }
+    const brevoRes = await fetch(url, {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+      },
+      body: JSON.stringify(bodyEmail),
+    });
 
+    const brevoData = await brevoRes.json();
+    if (!brevoRes.ok) {
+      console.error("Error Brevo:", brevoData);
+      throw new Error(`Fallo Brevo: ${brevoRes.status}`);
+    }
 
+    console.log("Correo enviado correctamente con Brevo:", brevoData);
     return res.status(200).json({
       ok: true,
-      message: process.env.NODE_ENV === "production"
-        ? "Correo enviado correctamente"
-        : "Correo simulado (modo dev)",
+      message: "Correo enviado correctamente con Brevo",
       proposal: proposalGPT,
+      brevoResponse: brevoData,
     });
 
   } catch (err) {
-    console.error("Error enviando correo:", err);
-    return res.status(500).json({ error: "Error enviando correo", details: err });
+    console.error("Error enviando correo con Brevo:", err);
+    return res.status(500).json({ error: "Error enviando correo", details: err.message });
   }
 }
