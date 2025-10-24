@@ -1,4 +1,10 @@
 {
   "version": 2,
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "functions": {
+    "api/TriggerProposals.js": {
+      "runtime": "nodejs18.x",
+      "schedule": "0 9,17 * * *"
+    }
+  }
 }
