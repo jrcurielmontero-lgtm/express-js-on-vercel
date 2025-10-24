@@ -2,11 +2,9 @@
   "name": "express-js-on-vercel",
   "version": "1.0.0",
   "description": "Servidor Express desplegado en Vercel para integraciones externas",
-  "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev",
-    "start": "node index.js"
+    "dev": "vercel dev"
   },
   "author": "J.R. Curiel Montero",
   "license": "MIT",
