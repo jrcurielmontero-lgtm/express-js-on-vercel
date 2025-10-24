@@ -4,7 +4,7 @@
   "functions": {
     "api/TriggerProposals.js": {
       "runtime": "nodejs18.x",
-      "schedule": "0 9,17 * * *"
+      "schedule": "0 10,17 * * *"
     }
   }
 }
