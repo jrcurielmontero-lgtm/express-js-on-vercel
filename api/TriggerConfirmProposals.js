@@ -3,7 +3,7 @@ import fetch from "node-fetch";
 export default async function handler(req, res) {
   console.log("=== TriggerConfirmProposals ejecutado ===");
   console.log("Hora UTC actual:", new Date().toISOString());
-
+ 
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
     console.error("Falta BREVO_API_KEY");
