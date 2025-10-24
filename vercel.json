@@ -3,5 +3,11 @@
   "installCommand": "npm install",
   "builds": [
     { "src": "api/TriggerConfirmProposals.js", "use": "@vercel/node" }
+  ],
+  "crons": [
+    {
+      "path": "/api/TriggerConfirmProposals",
+      "schedule": "0 9,21 * * *"
+    }
   ]
 }
