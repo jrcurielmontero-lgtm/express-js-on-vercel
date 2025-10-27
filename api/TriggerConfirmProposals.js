@@ -29,8 +29,8 @@ export default async function handler(req, res) {
 
     const candidatos = data.contacts.filter(
       (c) =>
-        c.attributes?.COMPLETADO_T2 === "Yes" &&
-        c.attributes?.ETAPA === "PROPUESTA"
+        c.attributes?.COMPLETADO_T2 === True &&
+        c.attributes?.ETAPA === "3"
     );
 
     console.log(`Contactos filtrados para propuesta: ${candidatos.length}`);
