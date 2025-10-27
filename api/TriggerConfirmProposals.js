@@ -3,7 +3,7 @@ import fetch from "node-fetch";
 export default async function handler(req, res) {
   console.log("=== TriggerConfirmProposals ejecutado ===");
   console.log("Hora UTC actual:", new Date().toISOString());
- 
+
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
     console.error("Falta BREVO_API_KEY");
@@ -27,16 +27,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Invalid Brevo response" });
     }
 
-    const candidatos = data.contacts.filter((c) => {
-    const completado = c.attributes?.COMPLETADO_T2;
-    const etapa = c.attributes?.ETAPA;
-  
-    return (
-      (completado === true || completado === "true") &&
-      String(etapa) === "3"
+    const candidatos = data.contacts.filter(
+      (c) =>
+        c.attributes?.COMPLETADO_T2 === true &&
+        c.attributes?.ETAPA === "3"
     );
-  });
-
 
     console.log(`Contactos filtrados para propuesta: ${candidatos.length}`);
 
@@ -46,7 +41,7 @@ export default async function handler(req, res) {
 
       const webhookUrl =
         process.env.BASE_URL ||
-        "https://express-js-on-vercel.vercel.app/api/WebhookSendProposal_up";
+        "https://express-js-on-vercel-41rtigi95-ramons-projects-623fdeed.vercel.app/api/WebhookSendProposal_up";
 
       try {
         const resp = await fetch(webhookUrl, {
@@ -55,7 +50,18 @@ export default async function handler(req, res) {
           body: JSON.stringify({ contact: contacto }),
         });
 
-        const result = await resp.json();
+        console.log(`Status del webhook para ${contacto.email}:`, resp.status, resp.statusText);
+
+        // Leer la respuesta de forma segura
+        let result;
+        try {
+          // Intentar parsear como JSON
+          result = await resp.json();
+        } catch (jsonErr) {
+          // Si no es JSON, leer como texto
+          result = await resp.text();
+        }
+
         console.log(`Webhook respuesta para ${contacto.email}:`, result);
       } catch (err) {
         console.error(`Error llamando webhook para ${contacto.email}:`, err);
