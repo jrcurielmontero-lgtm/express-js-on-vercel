@@ -27,11 +27,16 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Invalid Brevo response" });
     }
 
-    const candidatos = data.contacts.filter(
-      (c) =>
-        c.attributes?.COMPLETADO_T2 === True &&
-        c.attributes?.ETAPA === "PROPUESTA"
+    const candidatos = data.contacts.filter((c) => {
+    const completado = c.attributes?.COMPLETADO_T2;
+    const etapa = c.attributes?.ETAPA;
+  
+    return (
+      (completado === true || completado === "true") &&
+      String(etapa) === "3"
     );
+  });
+
 
     console.log(`Contactos filtrados para propuesta: ${candidatos.length}`);
 
