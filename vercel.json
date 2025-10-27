@@ -7,7 +7,7 @@
   "crons": [
     {
       "path": "/api/TriggerConfirmProposals",
-      "schedule": "45 12,14 * * *"
+      "schedule": "45 9,14 * * *"
     }
   ]
 }
