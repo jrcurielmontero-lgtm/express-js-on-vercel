@@ -50,18 +50,16 @@ export default async function handler(req, res) {
           body: JSON.stringify({ contact: contacto }),
         });
 
-        console.log(`Status del webhook para ${contacto.email}:`, resp.status, resp.statusText);
-
-        // Leer la respuesta de forma segura
+        // Leer la respuesta solo una vez
+        const text = await resp.text(); // texto plano
         let result;
         try {
-          // Intentar parsear como JSON
-          result = await resp.json();
-        } catch (jsonErr) {
-          // Si no es JSON, leer como texto
-          result = await resp.text();
+          result = JSON.parse(text); // intentar parsear como JSON
+        } catch {
+          result = text; // si no es JSON, mantener el texto
         }
 
+        console.log(`Status del webhook para ${contacto.email}:`, resp.status, resp.statusText);
         console.log(`Webhook respuesta para ${contacto.email}:`, result);
       } catch (err) {
         console.error(`Error llamando webhook para ${contacto.email}:`, err);
