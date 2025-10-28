@@ -39,10 +39,10 @@ export default async function handler(req, res) {
     for (const contacto of candidatos) {
       console.log(`Procesando ${contacto.email}...`);
 
-      const webhookUrl =
-        process.env.BASE_URL ||
-        "https://express-js-on-vercel-41rtigi95-ramons-projects-623fdeed.vercel.app/api/WebhookSendProposal_up";
-
+      const baseUrl =
+        process.env.BASE_URL || "https://express-js-on-vercel-41rtigi95-ramons-projects-623fdeed.vercel.app";
+      
+      const webhookUrl = `${baseUrl}/api/WebhookSendProposal_up`;
       try {
         const resp = await fetch(webhookUrl, {
           method: "POST",
