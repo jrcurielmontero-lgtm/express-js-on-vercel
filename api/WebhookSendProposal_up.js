@@ -54,7 +54,6 @@ Servicios incluidos:
 
   // 4️⃣ Generar propuesta vía GPT
   let propuestaFinal = prompt;
-
   if (process.env.OPENAI_API_KEY) {
     try {
       console.log("Invocando OpenAI...");
@@ -67,10 +66,7 @@ Servicios incluidos:
         body: JSON.stringify({
           model: "gpt-4",
           messages: [
-            {
-              role: "user",
-              content: `Redacta una propuesta comercial clara, estructurada y profesional para un cliente de Psicoboost, con el siguiente contexto:\n${prompt}`,
-            },
+            { role: "user", content: `Redacta propuesta corporativa:\n${prompt}` }
           ],
           max_tokens: 400,
         }),
@@ -89,16 +85,17 @@ Servicios incluidos:
     console.warn("⚠️ Falta OPENAI_API_KEY. Se usará prompt base.");
   }
 
-  // 5️⃣ Envío de correo con Brevo
+  // 5️⃣ Validación email antes de envío
   if (!email.includes("@")) {
     console.error("❌ Email inválido:", email);
     return res.status(400).json({ error: "Invalid email" });
   }
 
+  // 6️⃣ Envío de correo con Brevo (solo atributos necesarios)
   try {
     console.log(`📧 Enviando correo a ${email}...`);
     const brevoResponse = await sendProposalEmail({
-      attrs: { ...attrs, EMAIL: email },
+      attrs: { EMAIL: email, ...attrs },
       propuesta: propuestaFinal,
     });
 
