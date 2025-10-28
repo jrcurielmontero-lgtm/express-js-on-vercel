@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { sendProposalEmail } from "./_utils/sendProposalEmail.js";
+import { sendProposalEmail } from "./utilSendProposalEmail.js";
 
 export default async function handler(req, res) {
   console.log("=== WebhookSendProposal_up ejecutado ===");
