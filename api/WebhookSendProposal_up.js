@@ -17,7 +17,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing contact attributes" });
   }
 
-  console.log("Contacto recibido:", attrs.EMAIL || "sin email");
+  const email = attrs.EMAIL || attrs.email || "sin email";
+  console.log("Contacto recibido:", email);
 
   // 3️⃣ Prompt base
   const prompt = `
@@ -78,27 +79,30 @@ Servicios incluidos:
       const data = await response.json();
       if (data.error) {
         console.error("❌ Error GPT:", data.error);
-        propuestaFinal = "(Error generando propuesta con GPT)";
       } else {
         propuestaFinal = data.choices?.[0]?.message?.content || prompt;
       }
     } catch (err) {
       console.error("💥 Excepción GPT:", err);
-      propuestaFinal = "(Excepción generando propuesta GPT)";
     }
   } else {
     console.warn("⚠️ Falta OPENAI_API_KEY. Se usará prompt base.");
   }
 
-  // 5️⃣ Envío de correo con Brevo (delegado a función común)
+  // 5️⃣ Envío de correo con Brevo
+  if (!email.includes("@")) {
+    console.error("❌ Email inválido:", email);
+    return res.status(400).json({ error: "Invalid email" });
+  }
+
   try {
-    console.log("📧 Enviando correo a gestor@psicoboost.es...");
+    console.log(`📧 Enviando correo a ${email}...`);
     const brevoResponse = await sendProposalEmail({
-      attrs,
+      attrs: { ...attrs, EMAIL: email },
       propuesta: propuestaFinal,
     });
 
-    console.log("✅ Correo enviado correctamente:", brevoResponse.messageId || brevoResponse);
+    console.log("✅ Correo enviado:", brevoResponse?.messageId || brevoResponse);
 
     return res.status(200).json({
       ok: true,
@@ -110,7 +114,7 @@ Servicios incluidos:
     console.error("💥 Error enviando correo:", err);
     return res.status(500).json({
       error: "Error enviando correo con Brevo",
-      details: err.message,
+      details: err?.message || err,
     });
   }
 }
