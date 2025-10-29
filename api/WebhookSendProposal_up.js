@@ -11,11 +11,15 @@ export default async function handler(req, res) {
   }
 
   // 2️⃣ Validar estructura del contacto
-  const attrs = req.body?.contact?.attributes;
-  if (!attrs) {
-    console.error("❌ Faltan atributos del contacto");
-    return res.status(400).json({ error: "Missing contact attributes" });
-  }
+  const contact = req.body?.contact || {};
+  const attrs = contact.attributes || {};
+  const email = contact.email || attrs.EMAIL || attrs.email;
+
+if (!email) {
+  console.error("❌ No se encontró email en el contacto");
+  return res.status(400).json({ error: "Missing email in contact" });
+}
+
 
   const email = attrs.EMAIL || attrs.email || "sin email";
   console.log("Contacto recibido:", email);
