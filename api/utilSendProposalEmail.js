@@ -1,117 +1,83 @@
 import fetch from "node-fetch";
-import { sendProposalEmail } from "./utilSendProposalEmail.js";
 
-export default async function handler(req, res) {
-  console.log("=== WebhookSendProposal_up ejecutado ===");
-
-  // 1️⃣ Validación de método
-  if (req.method !== "POST") {
-    console.warn(`Método no permitido: ${req.method}`);
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
-  // 2️⃣ Validar estructura del contacto
-  const attrs = req.body?.contact?.attributes;
-  if (!attrs) {
-    console.error("❌ Faltan atributos del contacto");
-    return res.status(400).json({ error: "Missing contact attributes" });
-  }
-
-  const email = attrs.EMAIL || attrs.email || "sin email";
-  console.log("Contacto recibido:", email);
-
-  // 3️⃣ Prompt base
-  const prompt = `
-Propuesta Comercial Psicoboost
-------------------------------
-Nombre: ${attrs.NOMBRE || "N/A"}
-Entidad: ${attrs.TIPO_ENTIDAD || "N/A"}
-Número Colegiado: ${attrs.NUM_COLEGIADO || "N/A"}
-NIF/CIF: ${attrs.NIF || "N/A"}
-Especialidad: ${attrs.ESPECIALIDAD || "N/A"}
-CCAA: ${attrs.CCAA || "N/A"}
-Nombre negocio: ${attrs.NOMBRE_NEGOCIO || "N/A"}
-Web: ${attrs.WEB || "N/A"}
-Plan interés: ${attrs.PLAN_INTERES || "N/A"}
-Nivel digital: ${attrs.NIVEL_DIGITAL || "N/A"}
-Objetivo detallado: ${attrs.OBJETIVO_DETALLADO || "N/A"}
-RRSS:
-  Instagram: ${attrs.CUENTA_INSTAGRAM || "no"}
-  Facebook: ${attrs.CUENTA_FACEBOOK || "no"}
-  TikTok: ${attrs.CUENTA_TIKTOK || "no"}
-  YouTube: ${attrs.CUENTA_YOTUBE || "no"}
-  X: ${attrs.CUENTA_X || "no"}
-
-Servicios incluidos:
-  - Gestión de Redes Sociales
-  - Diseño gráfico básico
-  - Operativa de marketing
-  - SEO básico
-  - Informes automatizados
-`;
-
-  console.log("🧠 Prompt generado para GPT.");
-
-  // 4️⃣ Generar propuesta vía GPT
-  let propuestaFinal = prompt;
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      console.log("Invocando OpenAI...");
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [
-            { role: "user", content: `Redacta propuesta corporativa:\n${prompt}` }
-          ],
-          max_tokens: 400,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.error) {
-        console.error("❌ Error GPT:", data.error);
-      } else {
-        propuestaFinal = data.choices?.[0]?.message?.content || prompt;
-      }
-    } catch (err) {
-      console.error("💥 Excepción GPT:", err);
-    }
-  } else {
-    console.warn("⚠️ Falta OPENAI_API_KEY. Se usará prompt base.");
-  }
-
-  // 5️⃣ Validación email antes de envío
-  if (!email.includes("@")) {
-    console.error("❌ Email inválido:", email);
-    return res.status(400).json({ error: "Invalid email" });
-  }
-
-  // 6️⃣ Envío de correo con Brevo (solo atributos necesarios)
+/**
+ * Envía un correo con Brevo
+ * @param {Object} options
+ * @param {Object} options.attrs - Atributos del contacto
+ * @param {string} options.propuesta - Contenido de la propuesta
+ * @param {string} [options.to] - Correo destino (por defecto gestor)
+ * @param {string} [options.subject] - Asunto del correo
+ */
+export async function sendProposalEmail({
+  attrs,
+  propuesta,
+  to = "gestor@psicoboost.es",
+  subject,
+}) {
   try {
-    console.log(`📧 Enviando correo a ${email}...`);
-    const brevoResponse = await sendProposalEmail({
-      attrs: { EMAIL: email, ...attrs },
-      propuesta: propuestaFinal,
+    if (!process.env.BREVO_API_KEY) {
+      console.error("❌ Falta BREVO_API_KEY");
+      throw new Error("Falta BREVO_API_KEY");
+    }
+
+    const baseUrl = process.env.BASE_URL || "https://express-js-on-vercel.vercel.app";
+    const emailCliente = attrs?.EMAIL || attrs?.email || "gestor@psicoboost.es";
+    const emailSubject = subject || `Propuesta Comercial - ${attrs?.NOMBRE || "Cliente"}`;
+    const propuestaHTML = typeof propuesta === "string" ? propuesta.replace(/\n/g, "<br>") : "";
+
+    // Evita errores por email undefined
+    const emailSafe = encodeURIComponent(emailCliente || "no-email@psicoboost.es");
+
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h2 style="color:#2B6CB0;">Propuesta Comercial Psicoboost</h2>
+        <p>${propuestaHTML}</p>
+
+        <hr style="margin: 24px 0;">
+
+        <div style="text-align:center;">
+          <a href="${baseUrl}/api/WebhookAcceptProposal_up?email=${emailSafe}"
+             style="background-color:#38A169;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;margin-right:8px;">
+            ✅ Aceptar propuesta
+          </a>
+
+          <a href="${baseUrl}/api/WebhookEditProposal_up?email=${emailSafe}"
+             style="background-color:#DD6B20;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">
+            ✏️ Editar propuesta
+          </a>
+        </div>
+      </div>
+    `;
+
+    const bodyEmail = {
+      sender: { name: "Psicoboost", email: "gestor@psicoboost.es" },
+      to: [{ email: to }],
+      subject: emailSubject,
+      htmlContent: htmlBody,
+    };
+
+    console.log("📧 Enviando correo vía Brevo a:", bodyEmail.to);
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+      },
+      body: JSON.stringify(bodyEmail),
     });
 
-    console.log("✅ Correo enviado:", brevoResponse?.messageId || brevoResponse);
+    const data = await response.json();
 
-    return res.status(200).json({
-      ok: true,
-      message: "Correo enviado correctamente con Brevo",
-      proposal: propuestaFinal,
-      brevoResponse,
-    });
+    if (!response.ok) {
+      console.error("❌ Error Brevo:", data);
+      throw new Error(data.message || `Error Brevo (${response.status})`);
+    }
+
+    console.log("✅ Correo enviado correctamente a", to);
+    return data;
   } catch (err) {
-    console.error("💥 Error enviando correo:", err);
-    return res.status(500).json({
-      error: "Error enviando correo con Brevo",
-      details: err?.message || err,
-    });
+    console.error("💥 Error general en sendProposalEmail:", err);
+    throw err;
   }
 }
