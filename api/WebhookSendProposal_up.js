@@ -98,6 +98,10 @@ Servicios incluidos:
   // 6️⃣ Envío de correo con Brevo (solo atributos necesarios)
   try {
     console.log(`📧 Enviando correo a ${email}...`);
+    console.log("🧩 attrs:", attrs);  
+    console.log("🧩 propuesta:", propuesta?.slice?.(0, 200)); // primer trozo
+    console.log("🧩 to:", to);
+
     const brevoResponse = await sendProposalEmail({
       attrs: { EMAIL: email, ...attrs },
       propuesta: propuestaFinal,
