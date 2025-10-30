@@ -27,10 +27,11 @@ export async function sendProposalEmail({
     const emailSubject =
       subject || `Propuesta Comercial - ${attrs?.NOMBRE || "Cliente"}`;
 
-    const propuestaHTML =
-      typeof propuesta === "string"
-        ? propuesta.replace(/\n/g, "<br>")
-        : "(Propuesta vacía)";
+    const propuestaHTML = (typeof propuesta === "string" ? propuesta : "")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#39;")
+  .replace(/\n/g, "<br>");
+
 
     const emailSafe = encodeURIComponent(emailCliente);
 
