@@ -1,15 +1,11 @@
 import fetch from "node-fetch";
 
 /**
- * Envía una propuesta comercial mediante Brevo
- * Admite dos modos:
- *  - 🧩 Usando plantilla Brevo (si tienes configurado un templateId)
- *  - 🧱 Fallback a HTML inline si no hay plantilla configurada
- *
+ * Envía un correo con Brevo con propuesta y botones de acción
  * @param {Object} options
- * @param {Object} options.attrs - Atributos del contacto (NOMBRE, EMAIL, etc.)
- * @param {string} options.propuesta - Contenido de la propuesta (HTML o texto)
- * @param {string} [options.to] - Correo destino (por defecto: gestor)
+ * @param {Object} options.attrs - Atributos del contacto
+ * @param {string} options.propuesta - Contenido de la propuesta
+ * @param {string} [options.to] - Correo destino (por defecto gestor)
  * @param {string} [options.subject] - Asunto del correo
  */
 export async function sendProposalEmail({
@@ -20,78 +16,60 @@ export async function sendProposalEmail({
 }) {
   try {
     if (!process.env.BREVO_API_KEY) {
-      console.error("❌ Falta BREVO_API_KEY");
-      throw new Error("Falta BREVO_API_KEY");
+      throw new Error("❌ Falta BREVO_API_KEY");
     }
 
-    const baseUrl = process.env.BASE_URL || "https://express-js-on-vercel.vercel.app";
-    const emailCliente = attrs?.EMAIL || attrs?.email || "gestor@psicoboost.es";
-    const emailSubject = subject || `Propuesta Comercial - ${attrs?.NOMBRE || "Cliente"}`;
-    const templateId = process.env.BREVO_TEMPLATE_ID || null; // Opcional: ID del template Brevo
+    const baseUrl =
+      process.env.BASE_URL ||
+      "https://express-js-on-vercel-41rtigi95-ramons-projects-623fdeed.vercel.app";
 
-    // Limpieza y formato del cuerpo de propuesta
+    const emailCliente = attrs?.EMAIL || attrs?.email || "gestor@psicoboost.es";
+    const emailSubject =
+      subject || `Propuesta Comercial - ${attrs?.NOMBRE || "Cliente"}`;
+
     const propuestaHTML =
       typeof propuesta === "string"
         ? propuesta.replace(/\n/g, "<br>")
-        : "(Sin contenido)";
+        : "(Propuesta vacía)";
 
-    const emailSafe = encodeURIComponent(emailCliente || "no-email@psicoboost.es");
+    const emailSafe = encodeURIComponent(emailCliente);
 
-    // HTML base (fallback)
+    // === HTML del correo ===
     const htmlBody = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h2 style="color:#2B6CB0;">Propuesta Comercial Psicoboost</h2>
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <h2 style="color:#2B6CB0; text-align:center;">Propuesta Comercial Psicoboost</h2>
         <p>${propuestaHTML}</p>
 
         <hr style="margin: 24px 0;">
 
         <div style="text-align:center;">
           <a href="${baseUrl}/api/WebhookAcceptProposal_up?email=${emailSafe}"
-             style="background-color:#38A169;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;margin-right:8px;">
+             style="background-color:#38A169;color:#fff;padding:12px 20px;text-decoration:none;border-radius:8px;font-weight:bold;margin-right:10px;">
             ✅ Aceptar propuesta
           </a>
 
           <a href="${baseUrl}/api/WebhookEditProposal_up?email=${emailSafe}"
-             style="background-color:#DD6B20;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">
+             style="background-color:#DD6B20;color:#fff;padding:12px 20px;text-decoration:none;border-radius:8px;font-weight:bold;">
             ✏️ Editar propuesta
           </a>
         </div>
 
-        <p style="margin-top:24px;font-size:12px;color:#777;">
-          © Psicoboost · Propuesta generada automáticamente
-        </p>
+        <hr style="margin: 24px 0;">
+        <footer style="text-align:center; font-size: 13px; color: #777;">
+          © Psicoboost · <a href="https://www.psicoboost.es" style="color:#2B6CB0;">www.psicoboost.es</a>
+        </footer>
       </div>
     `;
 
-    // 📬 Cuerpo del request según modo
-    let bodyEmail;
+    // === Estructura del email ===
+    const bodyEmail = {
+      sender: { name: "Psicoboost", email: "gestor@psicoboost.es" },
+      to: [{ email: to }],
+      subject: emailSubject,
+      htmlContent: htmlBody, // 👈 IMPORTANTE: esto genera el HTML
+    };
 
-    if (templateId) {
-      // --- Envío con plantilla Brevo ---
-      bodyEmail = {
-        sender: { name: "Psicoboost", email: "gestor@psicoboost.es" },
-        to: [{ email: to }],
-        subject: emailSubject,
-        templateId: parseInt(templateId, 10),
-        params: {
-          propuesta: propuestaHTML,
-          email: emailSafe,
-          baseUrl,
-          nombre: attrs?.NOMBRE || "Cliente",
-        },
-      };
-    } else {
-      // --- Fallback al HTML inline ---
-      bodyEmail = {
-        sender: { name: "Psicoboost", email: "gestor@psicoboost.es" },
-        to: [{ email: to }],
-        subject: emailSubject,
-        htmlContent: htmlBody,
-      };
-    }
-
-    console.log(`📧 Enviando correo vía Brevo a: ${to}`);
-    if (templateId) console.log(`🧩 Usando plantilla ID: ${templateId}`);
+    console.log("📧 Enviando correo a:", to);
 
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
