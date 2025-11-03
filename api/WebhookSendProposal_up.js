@@ -15,14 +15,12 @@ export default async function handler(req, res) {
   const attrs = contact.attributes || {};
   const email = contact.email || attrs.EMAIL || attrs.email;
 
-if (!email) {
-  console.error("❌ No se encontró email en el contacto");
-  return res.status(400).json({ error: "Missing email in contact" });
-}
+  if (!email) {
+    console.error("❌ No se encontró email en el contacto");
+    return res.status(400).json({ error: "Missing email in contact" });
+  }
 
-
-  const email = attrs.EMAIL || attrs.email || "sin email";
-  console.log("Contacto recibido:", email);
+  console.log("📇 Contacto recibido:", email);
 
   // 3️⃣ Prompt base
   const prompt = `
@@ -43,7 +41,7 @@ RRSS:
   Instagram: ${attrs.CUENTA_INSTAGRAM || "no"}
   Facebook: ${attrs.CUENTA_FACEBOOK || "no"}
   TikTok: ${attrs.CUENTA_TIKTOK || "no"}
-  YouTube: ${attrs.CUENTA_YOTUBE || "no"}
+  YouTube: ${attrs.CUENTA_YOUTUBE || attrs.CUENTA_YOTUBE || "no"}
   X: ${attrs.CUENTA_X || "no"}
 
 Servicios incluidos:
@@ -60,7 +58,7 @@ Servicios incluidos:
   let propuestaFinal = prompt;
   if (process.env.OPENAI_API_KEY) {
     try {
-      console.log("Invocando OpenAI...");
+      console.log("🚀 Invocando OpenAI...");
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -69,24 +67,23 @@ Servicios incluidos:
         },
         body: JSON.stringify({
           model: "gpt-4",
-          messages: [
-            { role: "user", content: `Redacta propuesta corporativa:\n${prompt}` }
-          ],
-          max_tokens: 400,
+          messages: [{ role: "user", content: `Redacta una propuesta comercial corporativa a partir del siguiente contexto:\n${prompt}` }],
+          max_tokens: 500,
         }),
       });
 
       const data = await response.json();
+
       if (data.error) {
         console.error("❌ Error GPT:", data.error);
       } else {
-        propuestaFinal = data.choices?.[0]?.message?.content || prompt;
+        propuestaFinal = data.choices?.[0]?.message?.content?.trim() || prompt;
       }
     } catch (err) {
       console.error("💥 Excepción GPT:", err);
     }
   } else {
-    console.warn("⚠️ Falta OPENAI_API_KEY. Se usará prompt base.");
+    console.warn("⚠️ Falta OPENAI_API_KEY. Se usará el prompt base.");
   }
 
   // 5️⃣ Validación email antes de envío
@@ -95,19 +92,17 @@ Servicios incluidos:
     return res.status(400).json({ error: "Invalid email" });
   }
 
-  // 6️⃣ Envío de correo con Brevo (solo atributos necesarios)
+  // 6️⃣ Envío de correo con Brevo (via helper)
   try {
-    console.log(`📧 Enviando correo a ${email}...`);
-    console.log("🧩 attrs:", attrs);  
-    console.log("🧩 propuesta:", propuesta?.slice?.(0, 200)); // primer trozo
-    console.log("🧩 to:", to);
+    console.log("📨 Enviando propuesta generada a gestor...");
+    console.log("🧩 Primeros 200 chars de propuesta:\n", propuestaFinal.slice(0, 200));
 
     const brevoResponse = await sendProposalEmail({
       attrs: { EMAIL: email, ...attrs },
       propuesta: propuestaFinal,
     });
 
-    console.log("✅ Correo enviado:", brevoResponse?.messageId || brevoResponse);
+    console.log("✅ Correo enviado correctamente:", brevoResponse?.messageId || brevoResponse);
 
     return res.status(200).json({
       ok: true,
