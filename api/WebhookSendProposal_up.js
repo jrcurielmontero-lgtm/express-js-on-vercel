@@ -96,6 +96,8 @@ Servicios incluidos:
   try {
     console.log("📨 Enviando propuesta generada a gestor...");
     console.log("🧩 Primeros 200 chars de propuesta:\n", propuestaFinal.slice(0, 200));
+    console.log("=== WebhookSendProposal_up iniciado ===");
+    console.log("Datos recibidos:", req.body);
 
     const brevoResponse = await sendProposalEmail({
       attrs: { EMAIL: email, ...attrs },
@@ -112,6 +114,8 @@ Servicios incluidos:
     });
   } catch (err) {
     console.error("💥 Error enviando correo:", err);
+    console.error("Error en WebhookSendProposal_up:", error);
+
     return res.status(500).json({
       error: "Error enviando correo con Brevo",
       details: err?.message || err,
