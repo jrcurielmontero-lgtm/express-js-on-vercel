@@ -1,9 +1,8 @@
-// /api/syncBrevo.js
 import fetch from "node-fetch";
-import { supabase } from "../lib/supabaseClient.js";
+import { supabase } from "./LivSupabaseClient.js";
 
 export default async function handler(req, res) {
-  console.log("=== syncBrevo ejecutado ===");
+  console.log("=== TriggerSyncBrevo ejecutado ===");
 
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
@@ -13,7 +12,10 @@ export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Método no permitido" });
 
   const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: "Falta BREVO_API_KEY" });
+  if (!apiKey) {
+    console.error("❌ Falta BREVO_API_KEY");
+    return res.status(500).json({ error: "Falta BREVO_API_KEY" });
+  }
 
   try {
     console.log("📡 Consultando contactos en Brevo...");
@@ -27,7 +29,7 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!data?.contacts) {
-      console.error("Respuesta inesperada de Brevo:", data);
+      console.error("❌ Respuesta inesperada de Brevo:", data);
       return res.status(500).json({ error: "Respuesta inválida de Brevo" });
     }
 
@@ -62,25 +64,26 @@ export default async function handler(req, res) {
         updated_at: new Date().toISOString(),
       };
 
-      // 🔁 Upsert (insertar o actualizar)
-      const { data: upserted, error: upsertError } = await supabase
+      // 🔁 Inserta o actualiza según email
+      const { data: upserted, error } = await supabase
         .from("clientes")
         .upsert(clienteData, { onConflict: "email" })
         .select();
 
-      if (upsertError) {
-        console.error(`❌ Error sincronizando ${contacto.email}:`, upsertError);
+      if (error) {
+        console.error(`❌ Error sincronizando ${contacto.email}:`, error);
       } else {
         clientesProcesados.push(upserted[0]);
         console.log(`✅ Cliente sincronizado: ${contacto.email}`);
       }
     }
 
-    // Log de acción
+    // 📋 Log en Supabase
     await supabase.from("logs_acciones").insert([
       {
         accion: "sync_brevo",
         detalle: `Sincronizados ${clientesProcesados.length} contactos desde Brevo`,
+        fecha: new Date().toISOString(),
       },
     ]);
 
@@ -90,7 +93,7 @@ export default async function handler(req, res) {
       fecha: new Date().toISOString(),
     });
   } catch (err) {
-    console.error("💥 Error en syncBrevo:", err);
+    console.error("💥 Error general en TriggerSyncBrevo:", err);
     return res.status(500).json({ error: "Error general", details: err.message });
   }
 }
