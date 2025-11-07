@@ -52,17 +52,15 @@ export default async function handler(req, res) {
     const payload = { timeline, output };
 
     // === 2️⃣ Llamada a Shotstack API ===
-    const response = await fetch(
-      `https://api.${region}.shotstack.io/stage/render`,
-      {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+    const response = await fetch("https://api.shotstack.io/stage/render", {
+  method: "POST",
+  headers: {
+    "x-api-key": apiKey,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(payload),
+});
+
 
     const data = await response.json();
 
