@@ -7,14 +7,14 @@ export default async function handler(req, res) {
 
   const { prompt, imageUrl, duration = 8 } = req.body;
   const apiKey = process.env.SHOTSTACK_API_KEY;
-  const region = process.env.SHOTSTACK_REGION || "eu1"; // usa eu1 para estabilidad
+  const region = process.env.SHOTSTACK_REGION || "eu1";
 
   if (!apiKey) {
     return res.status(500).json({ error: "Falta SHOTSTACK_API_KEY" });
   }
 
   try {
-    // 🎬 1️⃣ Construir los clips
+    // 🎬 1️⃣ Clip de texto (título superpuesto)
     const textClip = {
       asset: {
         type: "title",
@@ -29,6 +29,7 @@ export default async function handler(req, res) {
       position: "center",
     };
 
+    // 🎬 2️⃣ Clip de imagen si se proporciona
     const imageClip = imageUrl
       ? {
           asset: {
@@ -41,9 +42,14 @@ export default async function handler(req, res) {
         }
       : null;
 
-    // 🎞️ 2️⃣ Tracks deben tener propiedad clips:[]
-    const tracks = imageClip ? [{ clips: [imageClip, textClip] }] : [{ clips: [textClip] }];
+    // 🎞️ 3️⃣ Cada track DEBE tener un array de clips
+    const tracks = [
+      {
+        clips: imageClip ? [imageClip, textClip] : [textClip],
+      },
+    ];
 
+    // 🎧 4️⃣ Timeline completo
     const timeline = {
       background: "#000000",
       soundtrack: {
@@ -53,6 +59,7 @@ export default async function handler(req, res) {
       tracks,
     };
 
+    // 📺 5️⃣ Configuración de salida
     const output = {
       format: "mp4",
       resolution: "hd",
@@ -61,7 +68,7 @@ export default async function handler(req, res) {
 
     const payload = { timeline, output };
 
-    // 🚀 3️⃣ Enviar a Shotstack
+    // 🚀 6️⃣ Llamada a la API de Shotstack
     const response = await fetch(`https://api.${region}.shotstack.io/stage/render`, {
       method: "POST",
       headers: {
@@ -75,10 +82,13 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       console.error("❌ Error Shotstack:", data);
-      return res.status(response.status).json({ error: "Error al generar video", details: data });
+      return res.status(response.status).json({
+        error: "Error al generar video",
+        details: data,
+      });
     }
 
-    // ✅ 4️⃣ Devuelve el render ID
+    // ✅ 7️⃣ Devuelve el renderId
     return res.status(200).json({
       ok: true,
       renderId: data.response.id,
