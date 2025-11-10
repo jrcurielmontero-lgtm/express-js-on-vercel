@@ -1,64 +1,57 @@
 import fetch from "node-fetch";
 
+// Este endpoint genera un video cinematográfico a partir de un prompt
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
 
-  const { prompt, imageUrl, duration = 8 } = req.body;
-  const apiKey = process.env.SHOTSTACK_API_KEY;
-  const endpoint = "https://api.shotstack.io/stage/render";
-
-  if (!apiKey) return res.status(500).json({ error: "Falta SHOTSTACK_API_KEY" });
+  const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: "Falta el prompt" });
 
   try {
-    // 🔹 1️⃣ Separar acciones del prompt
-    const actions = prompt.split(/[\.;]\s*/).filter(a => a.trim().length > 0);
-    const clipDuration = duration / actions.length;
+    // 1️⃣ Dividir prompt en escenas o acciones
+    const scenes = prompt.split(/[\.;]\s*/).filter(s => s.length > 0);
 
-    const clips = actions.map((text, i) => ({
-      asset: { type: "title", text: text.slice(0, 150), style: "minimal", size: "medium", color: "#ffffff", background: "#000000" },
-      start: i * clipDuration,
-      length: clipDuration,
-      position: "center",
-      transition: { in: "fade", out: "fade" }, // fundido entrada/salida
+    // 2️⃣ Generar imágenes para cada escena usando la API de IA
+    const images = [];
+    for (const scene of scenes) {
+      const imageResponse = await fetch("https://api.deevid.ai/generate", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${process.env.DEEVID_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: scene, style: "cinematographic" })
+      });
+      const imageData = await imageResponse.json();
+      images.push(imageData.url); // URL de la imagen generada
+    }
+
+    // 3️⃣ Montar las imágenes en un video usando Shotstack (o ffmpeg)
+    const clips = images.map((imgUrl, i) => ({
+      asset: { type: "image", src: imgUrl },
+      start: i * 3,  // cada escena dura 3s
+      length: 3,
+      transition: { in: "fade", out: "fade" }
     }));
 
-    // 🔹 2️⃣ Fondo opcional (si se proporciona imageUrl)
-    const trackClips = imageUrl
-      ? [{ asset: { type: "image", src: imageUrl }, start: 0, length: duration }, ...clips]
-      : clips;
+    const payload = {
+      timeline: { background: "#000000", tracks: [{ clips }] },
+      output: { format: "mp4", resolution: "hd", aspectRatio: "16:9" }
+    };
 
-    const tracks = [{ clips: trackClips }];
-
-    const timeline = { background: "#000000", tracks };
-
-    const output = { format: "mp4", resolution: "hd", aspectRatio: "9:16" };
-
-    const payload = { timeline, output };
-
-    // 🔹 3️⃣ Llamada a Shotstack
-    const response = await fetch(endpoint, {
+    const shotstackResponse = await fetch(`https://api.shotstack.io/stage/render`, {
       method: "POST",
-      headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: { "x-api-key": process.env.SHOTSTACK_API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("❌ Error Shotstack:", data);
-      return res.status(response.status).json({ error: "Error al generar video", details: data });
-    }
+    const renderData = await shotstackResponse.json();
 
     return res.status(200).json({
       ok: true,
-      renderId: data.response.id,
-      message: "Render en proceso. Consulta el estado con SERRSScheckRenderStatus.js.",
+      message: "Render en proceso",
+      renderId: renderData.response.id
     });
+
   } catch (err) {
-    console.error("💥 Error generarVideoRRSS:", err);
+    console.error("💥 Error generando video cinematográfico:", err);
     return res.status(500).json({ error: "Error interno", details: err.message });
   }
 }
