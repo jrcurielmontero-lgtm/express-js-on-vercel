@@ -36,7 +36,6 @@ export default async function handler(req, res) {
           asset: {
             type: "image",
             src: imageUrl,
-            fit: "cover",
           },
           start: 0,
           length: duration,
