@@ -13,29 +13,32 @@ export default async function handler(req, res) {
   if (!prompt) return res.status(400).json({ error: "Falta el prompt" });
 
   try {
-    // Clip de texto superpuesto (solo con información del prompt)
-    const textClip = {
-      asset: { type: "title", text: prompt.slice(0, 120) + "...", style: "minimal", size: "medium", color: "#ffffff", background: "#000000" },
-      start: 0,
-      length: duration,
+    // 🔹 1️⃣ Separar acciones del prompt
+    const actions = prompt.split(/[\.;]\s*/).filter(a => a.trim().length > 0);
+    const clipDuration = duration / actions.length;
+
+    const clips = actions.map((text, i) => ({
+      asset: { type: "title", text: text.slice(0, 150), style: "minimal", size: "medium", color: "#ffffff", background: "#000000" },
+      start: i * clipDuration,
+      length: clipDuration,
       position: "center",
-    };
+      transition: { in: "fade", out: "fade" }, // fundido entrada/salida
+    }));
 
-    // Clip de imagen opcional
-    const imageClip = imageUrl ? { asset: { type: "image", src: imageUrl }, start: 0, length: duration } : null;
+    // 🔹 2️⃣ Fondo opcional (si se proporciona imageUrl)
+    const trackClips = imageUrl
+      ? [{ asset: { type: "image", src: imageUrl }, start: 0, length: duration }, ...clips]
+      : clips;
 
-    // Cada track DEBE tener clips[]
-    const tracks = [{ clips: imageClip ? [imageClip, textClip] : [textClip] }];
+    const tracks = [{ clips: trackClips }];
 
-    const timeline = {
-      background: "#000000",
-      tracks,
-    };
+    const timeline = { background: "#000000", tracks };
 
     const output = { format: "mp4", resolution: "hd", aspectRatio: "9:16" };
 
     const payload = { timeline, output };
 
+    // 🔹 3️⃣ Llamada a Shotstack
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
