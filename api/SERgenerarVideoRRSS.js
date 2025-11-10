@@ -7,7 +7,8 @@ export default async function handler(req, res) {
 
   const { prompt, imageUrl, duration = 8 } = req.body;
   const apiKey = process.env.SHOTSTACK_API_KEY;
-  const region = process.env.SHOTSTACK_REGION || "eu1";
+  const endpoint = "https://api.shotstack.io/stage/render";
+
 
   if (!apiKey) {
     return res.status(500).json({ error: "Falta SHOTSTACK_API_KEY" });
@@ -69,7 +70,7 @@ export default async function handler(req, res) {
     const payload = { timeline, output };
 
     // 🚀 6️⃣ Llamada a la API de Shotstack
-    const response = await fetch(`https://api.${region}.shotstack.io/stage/render`, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "x-api-key": apiKey,
@@ -77,6 +78,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify(payload),
     });
+
 
     const data = await response.json();
 
